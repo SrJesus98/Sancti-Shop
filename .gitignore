@@ -53,6 +53,11 @@ htmlcov/
 # Entorno
 .env
 .env.local
+.env.*
+
+# Documentación y guías (se guardan en /home/tito/ fuera del proyecto)
+*.md
+!README.md  # Solo README si es necesario
 
 # Temporary
 *.tmp
