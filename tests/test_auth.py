@@ -3,14 +3,16 @@
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel
 
+from app.core.limiter import reset_rate_limiter
 from app.db.session import engine
 from app.main import app
 
 
 def reset_db() -> None:
-    """Reset database tables for test isolation."""
+    """Reset database tables and rate limiter for test isolation."""
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
+    reset_rate_limiter()
 
 
 def test_registro_exitoso() -> None:
@@ -19,7 +21,7 @@ def test_registro_exitoso() -> None:
 
     response = client.post(
         "/api/auth/register",
-        json={"email": "user@test.com", "password": "password123"},
+        json={"email": "user@test.com", "password": "Password123!"},
     )
 
     assert response.status_code == 201
@@ -33,12 +35,12 @@ def test_login_exitoso() -> None:
     client = TestClient(app)
     client.post(
         "/api/auth/register",
-        json={"email": "login@test.com", "password": "password123"},
+        json={"email": "login@test.com", "password": "Password123!"},
     )
 
     response = client.post(
         "/api/auth/login",
-        json={"email": "login@test.com", "password": "password123"},
+        json={"email": "login@test.com", "password": "Password123!"},
     )
 
     assert response.status_code == 200
@@ -74,11 +76,11 @@ def test_scope_faltante_retorna_403() -> None:
     client = TestClient(app)
     client.post(
         "/api/auth/register",
-        json={"email": "scope@test.com", "password": "password123"},
+        json={"email": "scope@test.com", "password": "Password123!"},
     )
     login_response = client.post(
         "/api/auth/login",
-        json={"email": "scope@test.com", "password": "password123"},
+        json={"email": "scope@test.com", "password": "Password123!"},
     )
     token = login_response.json()["access_token"]
 

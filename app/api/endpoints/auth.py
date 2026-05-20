@@ -1,9 +1,10 @@
 """Authentication endpoints."""
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from sqlmodel import Session
 
 from app.api.dependencies.auth import get_current_user, require_scopes
+from app.core.limiter import limiter
 from app.db.models import User
 from app.db.session import get_session
 from app.schemas.auth import (
@@ -19,14 +20,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: UserRegisterRequest, session: Session = Depends(get_session)) -> AuthUserResponse:
+@limiter.limit("3/minute")
+def register(request: Request, payload: UserRegisterRequest, session: Session = Depends(get_session)) -> AuthUserResponse:
     """Register a user with bcrypt password hashing."""
     user = register_user(session, payload.email, payload.password)
     return AuthUserResponse(id=user.id, email=user.email, scopes=user.scopes)
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 def login(
+    request: Request,
     payload: UserLoginRequest,
     response: Response,
     session: Session = Depends(get_session),
@@ -38,7 +42,7 @@ def login(
         value=token,
         httponly=True,
         secure=False,
-        samesite="lax",
+        samesite="strict",
         max_age=60 * 30,
     )
     return TokenResponse(access_token=token)

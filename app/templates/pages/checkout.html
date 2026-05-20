@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Checkout — E-commerce{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">Finalizar compra</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div id="checkout-items" class="space-y-4">
+            <!-- Se llena con JS -->
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 h-fit">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Pagar</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span id="checkout-total">$0.00</span>
+                </div>
+
+                <button id="pay-btn"
+                        class="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 font-semibold transition">
+                    Pagar ahora
+                </button>
+                <p id="pay-result" class="text-center text-sm mt-2"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const token = localStorage.getItem('access_token');
+
+async function loadCheckout() {
+    try {
+        const response = await fetch('/api/cart/items', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            renderCheckoutItems(data);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderCheckoutItems(data) {
+    const container = document.getElementById('checkout-items');
+    if (!data.items || data.items.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">Tu carrito está vacío</p>';
+        document.getElementById('pay-btn').disabled = true;
+        return;
+    }
+
+    let html = '';
+    let total = 0;
+    for (const item of data.items) {
+        const subtotal = item.product.price * item.quantity;
+        total += subtotal;
+        html += `
+            <div class="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div class="flex-1">
+                    <h3 class="font-semibold">${item.product.name}</h3>
+                    <p class="text-sm text-gray-500">$${item.product.price.toFixed(2)} x ${item.quantity}</p>
+                </div>
+                <p class="font-bold">$${subtotal.toFixed(2)}</p>
+            </div>
+        `;
+    }
+    container.innerHTML = html;
+    document.getElementById('checkout-total').textContent = `$${total.toFixed(2)}`;
+}
+
+document.getElementById('pay-btn').addEventListener('click', async function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+    const resultEl = document.getElementById('pay-result');
+
+    try {
+        const checkoutRes = await fetch('/api/orders/checkout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!checkoutRes.ok) {
+            resultEl.textContent = 'Error al crear el pedido';
+            resultEl.className = 'text-center text-sm mt-2 text-red-500';
+            btn.disabled = false;
+            btn.textContent = 'Pagar ahora';
+            return;
+        }
+
+        const order = await checkoutRes.json();
+
+        const payRes = await fetch('/api/payments/create-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ order_id: order.id, simulate: 'approved' })
+        });
+
+        if (payRes.ok) {
+            const payment = await payRes.json();
+            resultEl.textContent = '✅ Pedido creado. Redirigiendo al pago...';
+            resultEl.className = 'text-center text-sm mt-2 text-green-600';
+
+            // Redirigir a la URL de pago
+            if (payment.redirect_url && payment.redirect_url !== 'pending') {
+                window.location.href = payment.redirect_url;
+            } else {
+                // Simular webhook de pago aprobado
+                setTimeout(async () => {
+                    await fetch('/api/payments/webhook', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Webhook-Signature': 'mock-webhook-secret'
+                        },
+                        body: JSON.stringify({
+                            payment_id: payment.id,
+                            order_id: order.id,
+                            status: 'approved'
+                        })
+                    });
+                    window.location.href = '/views/orders';
+                }, 1500);
+            }
+        }
+    } catch (err) {
+        resultEl.textContent = 'Error de conexión';
+        resultEl.className = 'text-center text-sm mt-2 text-red-500';
+        btn.disabled = false;
+        btn.textContent = 'Pagar ahora';
+    }
+});
+
+loadCheckout();
+</script>
+{% endblock %}

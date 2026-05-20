@@ -3,6 +3,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session
 
+from app.core.limiter import reset_rate_limiter
 from app.db.models import Order, PaymentWebhookEvent, Product, User
 from app.db.session import engine
 from app.main import app
@@ -11,10 +12,11 @@ from app.main import app
 def reset_db() -> None:
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
+    reset_rate_limiter()
 
 
 def _register_and_login(client: TestClient, email: str, as_admin: bool = False) -> dict[str, str]:
-    password = "password123"
+    password = "Password123!"
     client.post("/api/auth/register", json={"email": email, "password": password})
 
     if as_admin:

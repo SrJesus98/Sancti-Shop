@@ -1,9 +1,10 @@
 """Product endpoints for admin CRUD and public listing."""
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from sqlmodel import Session
 
 from app.api.dependencies.auth import require_scopes
+from app.core.limiter import limiter
 from app.db.models import User
 from app.db.session import get_session
 from app.schemas.products import (
@@ -12,7 +13,7 @@ from app.schemas.products import (
     ProductUpdateRequest,
     PublicProductListResponse,
 )
-from app.services.products import create_product, delete_product, list_public_products, update_product
+from app.services.products import create_product, delete_product, get_products, update_product
 
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -20,22 +21,19 @@ ADMIN_PRODUCT_SCOPES = ["admin:products"]
 
 
 @router.get("", response_model=PublicProductListResponse)
+@limiter.limit("100/minute")
 def list_products(
+    request: Request,
     page: int = Query(default=1, ge=1),
     size: int = Query(default=10, ge=1, le=100),
     category: str | None = Query(default=None),
+    sort: str | None = Query(default=None),
+    order: str = Query(default="asc"),
     session: Session = Depends(get_session),
 ) -> PublicProductListResponse:
-    """Public products listing with pagination and category filter."""
-    items, total = list_public_products(session, page=page, size=size, category=category)
-    total_pages = (total + size - 1) // size if total else 0
-    return PublicProductListResponse(
-        items=[ProductResponse.model_validate(item) for item in items],
-        page=page,
-        size=size,
-        total=total,
-        total_pages=total_pages,
-    )
+    """Public products listing with pagination, category filter, and sorting."""
+    result = get_products(session, page=page, size=size, category=category, sort=sort, order=order)
+    return PublicProductListResponse(**result)
 
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)

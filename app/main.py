@@ -3,11 +3,18 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.db.session import create_db_and_tables
+from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.views.router import router as views_router
 
 # Configure logging
 logging.basicConfig(
@@ -34,29 +41,35 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS.split(","),
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# Security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Static files (CSS, JS)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# API routes
 app.include_router(api_router)
 
+# View routes (HTML pages)
+app.include_router(views_router)
 
-@app.get("/", response_class=HTMLResponse)
+
+@app.get("/")
 async def root():
-    """Root endpoint."""
-    return """
-    <html>
-        <head>
-            <title>E-commerce</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="bg-gray-100">
-            <div class="container mx-auto px-4 py-8">
-                <h1 class="text-4xl font-bold text-blue-600">E-commerce</h1>
-                <p class="mt-4 text-gray-700">Proyecto inicializado correctamente</p>
-                <div class="mt-8">
-                    <a href="/docs" class="text-blue-500 hover:underline">API Docs</a>
-                </div>
-            </div>
-        </body>
-    </html>
-    """
+    """Redirect to views."""
+    return RedirectResponse(url="/views/")
 
 
 @app.get("/health")

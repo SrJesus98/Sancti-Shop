@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Panel Admin — E-commerce{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Gestión de productos</h1>
+        <button onclick="showCreateForm()"
+                class="bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 font-semibold transition">
+            + Nuevo producto
+        </button>
+    </div>
+
+    {# Tabla de productos #}
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Producto</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Categoría</th>
+                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Precio</th>
+                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Stock</th>
+                    <th class="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase">Activo</th>
+                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for product in products %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <p class="font-medium text-gray-800">{{ product.name }}</p>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ product.category or '-' }}</td>
+                    <td class="px-6 py-4 text-right font-medium">${{ "%.2f"|format(product.price) }}</td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="{% if product.stock <= 0 %}text-red-500{% elif product.stock <= 5 %}text-yellow-500{% else %}text-green-600{% endif %} font-medium">
+                            {{ product.stock }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        {% if product.is_active %}
+                        <span class="text-green-500">✅</span>
+                        {% else %}
+                        <span class="text-red-400">❌</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="editProduct({{ product.id }})" class="text-primary-600 hover:text-primary-700 text-sm font-medium mr-3">Editar</button>
+                        <button onclick="toggleProduct({{ product.id }})" class="text-gray-500 hover:text-red-500 text-sm font-medium">
+                            {% if product.is_active %}Desactivar{% else %}Activar{% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not products %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">No hay productos registrados</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const token = localStorage.getItem('access_token');
+
+async function toggleProduct(productId) {
+    // Obtener datos actuales del producto y toggle is_active
+    try {
+        const getRes = await fetch(`/api/products/${productId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const product = await getRes.json();
+
+        const res = await fetch(`/api/products/update/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ is_active: !product.is_active })
+        });
+
+        if (res.ok) location.reload();
+    } catch (err) {
+        showToast('Error al actualizar producto', 'error');
+    }
+}
+
+function editProduct(productId) {
+    window.location.href = `/views/admin/products?edit=${productId}`;
+}
+
+function showCreateForm() {
+    // Por ahora simple
+    const name = prompt('Nombre del producto:');
+    if (!name) return;
+    const price = prompt('Precio:');
+    if (!price) return;
+    const stock = prompt('Stock:') || '0';
+    const category = prompt('Categoría:') || '';
+
+    fetch('/api/products/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, price: parseFloat(price), stock: parseInt(stock), category })
+    }).then(r => {
+        if (r.ok) location.reload();
+        else r.json().then(d => showToast(d.detail || 'Error', 'error'));
+    });
+}
+</script>
+{% endblock %}

@@ -1,9 +1,10 @@
 """Order endpoints for checkout and status transitions."""
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlmodel import Session
 
 from app.api.dependencies.auth import get_current_user, require_scopes
+from app.core.limiter import limiter
 from app.db.models import User
 from app.db.session import get_session
 from app.schemas.orders import AdminOrderStatusUpdateRequest, OrderResponse
@@ -20,7 +21,9 @@ ADMIN_ORDER_SCOPES = ["admin:orders"]
 
 
 @router.post("/checkout", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def checkout_endpoint(
+    request: Request,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> OrderResponse:

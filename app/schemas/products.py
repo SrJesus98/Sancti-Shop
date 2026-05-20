@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProductBase(BaseModel):
@@ -15,6 +15,20 @@ class ProductBase(BaseModel):
     category: str | None = Field(default=None, max_length=100)
     image_url: str | None = None
     is_active: bool = True
+
+    @field_validator("name")
+    @classmethod
+    def name_min_length(cls, v: str) -> str:
+        if len(v.strip()) < 2:
+            raise ValueError("Name must be at least 2 characters")
+        return v.strip()
+
+    @field_validator("price")
+    @classmethod
+    def price_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("Price must be greater than 0")
+        return round(v, 2)
 
 
 class ProductCreateRequest(ProductBase):

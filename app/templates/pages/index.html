@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Inicio — E-commerce{% endblock %}
+
+{% block content %}
+{# ==================== HERO SECTION ==================== #}
+<section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
+    <div class="container mx-auto px-4 py-16 md:py-24">
+        <div class="max-w-2xl">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Tu tienda online de confianza</h1>
+            <p class="text-lg md:text-xl text-primary-100 mb-8">Encuentra los mejores productos con los mejores precios</p>
+            <a href="#products" class="inline-block bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition">
+                Ver productos
+            </a>
+        </div>
+    </div>
+</section>
+
+{# ==================== CATEGORÍAS ==================== #}
+{% if categories %}
+<section class="bg-gray-50 py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-wrap gap-2">
+            <a href="#products" class="px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium">Todos</a>
+            {% for cat in categories %}
+            <a href="/views/?category={{ cat }}" class="px-4 py-2 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-primary-50 hover:border-primary-300 text-sm font-medium transition">
+                {{ cat }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ==================== PRODUCTOS ==================== #}
+<section id="products" class="py-12">
+    <div class="container mx-auto px-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-8">Productos destacados</h2>
+
+        {% if products %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in products %}
+            <div class="product-card bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                {# Imagen del producto #}
+                <a href="/views/product/{{ product.id }}">
+                    <div class="h-48 bg-gradient-to-br from-primary-100 to-primary-50 flex items-center justify-center">
+                        {% if product.image_url %}
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <svg class="w-16 h-16 text-primary-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                </a>
+
+                {# Info del producto #}
+                <div class="p-4">
+                    <span class="text-xs text-gray-500 uppercase tracking-wide">{{ product.category or 'General' }}</span>
+                    <a href="/views/product/{{ product.id }}">
+                        <h3 class="text-lg font-semibold text-gray-800 mt-1 hover:text-primary-600 transition">{{ product.name }}</h3>
+                    </a>
+                    <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ product.description or '' }}</p>
+
+                    <div class="flex items-center justify-between mt-4">
+                        <span class="text-xl font-bold text-primary-600">${{ "%.2f"|format(product.price) }}</span>
+                        {% if product.stock > 0 %}
+                        <button onclick="addToCart({{ product.id }})"
+                                class="bg-accent-500 text-white px-4 py-2 rounded-lg hover:bg-accent-600 text-sm font-medium transition">
+                            Agregar
+                        </button>
+                        {% else %}
+                        <span class="text-red-500 text-sm font-medium">Sin stock</span>
+                        {% endif %}
+                    </div>
+
+                    {% if product.stock > 0 and product.stock <= 5 %}
+                    <p class="text-xs text-yellow-600 mt-2">Solo quedan {{ product.stock }} unidades</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        {# Sin productos #}
+        <div class="text-center py-16">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-500">No hay productos disponibles</h3>
+            <p class="text-gray-400 mt-2">Vuelve pronto, estamos agregando nuevos productos.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
