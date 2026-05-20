@@ -20,9 +20,9 @@
 
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                    <input type="password" id="password" name="password" required
+                    <input type="password" id="password" name="password" required minlength="8"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
-                           placeholder="••••••••">
+                           placeholder="•••••••• (mín. 8 caracteres)">
                 </div>
 
                 <div id="login-error" class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm"></div>
@@ -71,7 +71,12 @@ document.getElementById('login-form').addEventListener('submit', async function(
             window.location.href = '/views/';
         } else {
             const data = await response.json();
-            errorDiv.textContent = data.detail || 'Error al iniciar sesión';
+            // Manejar errores de validación (422) y otros errores
+            if (Array.isArray(data.detail)) {
+                errorDiv.textContent = data.detail.map(e => e.msg).join('. ');
+            } else {
+                errorDiv.textContent = data.detail || 'Error al iniciar sesión';
+            }
             errorDiv.classList.remove('hidden');
         }
     } catch (err) {
