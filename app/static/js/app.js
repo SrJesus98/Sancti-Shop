@@ -346,7 +346,7 @@ async function updateCartCount() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
 
-        const response = await fetch('/api/cart/items', {
+        const response = await fetch('/api/cart', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 

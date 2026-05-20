@@ -40,7 +40,7 @@
                             <a href="/views/admin/products" class="block px-4 py-2.5 text-sm text-accent-600 dark:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">⚙️ Panel admin</a>
                             {% endif %}
                             <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                            <a href="/auth/logout" class="block px-4 py-2.5 text-sm text-gray-500 hover:text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition">🚪 Cerrar sesión</a>
+                            <a href="/api/auth/logout" class="block px-4 py-2.5 text-sm text-gray-500 hover:text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition">🚪 Cerrar sesión</a>
                         </div>
                     </div>
                 {% else %}
@@ -78,7 +78,7 @@
                 <a href="/views/admin/products" class="block px-4 py-3 rounded-lg text-accent-600 dark:text-accent-400 hover:bg-gray-100 dark-hover-bg font-medium transition">⚙️ Panel admin</a>
                 {% endif %}
                 <hr class="border-gray-200 dark:border-gray-700 my-2">
-                <a href="/auth/logout" class="block px-4 py-3 rounded-lg text-gray-500 hover:text-red-500 hover:bg-gray-100 dark-hover-bg transition">🚪 Cerrar sesión</a>
+                <a href="/api/auth/logout" class="block px-4 py-3 rounded-lg text-gray-500 hover:text-red-500 hover:bg-gray-100 dark-hover-bg transition">🚪 Cerrar sesión</a>
             {% else %}
                 <hr class="border-gray-200 dark:border-gray-700 my-2">
                 <a href="/views/login" class="block px-4 py-3 rounded-lg text-primary-600 font-medium hover:bg-primary-50 dark-hover-bg transition">🔑 Iniciar sesión</a>

@@ -1,6 +1,7 @@
 """Authentication endpoints."""
 
 from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
 from app.api.dependencies.auth import get_current_user, require_scopes
@@ -60,3 +61,17 @@ def admin_only(
 ) -> AuthUserResponse:
     """Protected endpoint requiring admin scope."""
     return AuthUserResponse(id=current_user.id, email=current_user.email, scopes=current_user.scopes)
+
+
+@router.get("/logout", response_class=RedirectResponse)
+def logout():
+    """Clear auth cookie and redirect to home."""
+    response = RedirectResponse(url="/views/")
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        secure=False,
+        httponly=True,
+        samesite="strict",
+    )
+    return response

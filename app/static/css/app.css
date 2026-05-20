@@ -172,7 +172,8 @@ body {
 }
 
 .hero-carousel .slide-content {
-    max-width: 500px;
+    max-width: 560px;
+    padding-left: 3rem;
 }
 
 .hero-carousel .slide-content h2 {
@@ -791,6 +792,7 @@ body {
 
     .hero-carousel .slide-content {
         padding: 1.5rem;
+        padding-left: 1rem;
     }
 
     .hero-carousel .slide-content h2 {
