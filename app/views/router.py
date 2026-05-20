@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
 from app.core.security import decode_token
-from app.db.models import Product, User
+from app.db.models import Order, Product, User
 from app.db.session import get_session
 
 templates = Jinja2Templates(directory="app/templates")
@@ -214,4 +214,32 @@ async def admin_products(
         request,
         "pages/admin/products.html",
         _context(user, {"products": products})
+    )
+
+
+@router.get("/admin/orders")
+async def admin_orders(
+    request: Request,
+    user: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+):
+    """Admin order management page."""
+    return templates.TemplateResponse(
+        request,
+        "pages/admin/orders.html",
+        _context(user)
+    )
+
+
+@router.get("/admin/users")
+async def admin_users(
+    request: Request,
+    user: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+):
+    """Admin user management page."""
+    return templates.TemplateResponse(
+        request,
+        "pages/admin/users.html",
+        _context(user)
     )

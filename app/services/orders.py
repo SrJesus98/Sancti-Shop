@@ -15,7 +15,7 @@ ADMIN_ALLOWED_TRANSITIONS = {
 }
 
 
-def _build_order_response(session: Session, order: Order) -> OrderResponse:
+def build_order_response(session: Session, order: Order) -> OrderResponse:
     items = session.query(OrderItem).filter(OrderItem.order_id == order.id).all()
     return OrderResponse(
         id=order.id,
@@ -28,6 +28,7 @@ def _build_order_response(session: Session, order: Order) -> OrderResponse:
             OrderItemResponse(
                 id=item.id,
                 product_id=item.product_id,
+                product_name=item.product.name if item.product else "",
                 quantity=item.quantity,
                 price=float(item.price),
             )
@@ -76,7 +77,7 @@ def checkout_from_cart(session: Session, user: User) -> OrderResponse:
 
     session.commit()
     session.refresh(order)
-    return _build_order_response(session, order)
+    return build_order_response(session, order)
 
 
 def list_orders_for_user(session: Session, user: User) -> list[OrderResponse]:
@@ -87,7 +88,7 @@ def list_orders_for_user(session: Session, user: User) -> list[OrderResponse]:
         .order_by(Order.created_at.desc())
         .all()
     )
-    return [_build_order_response(session, order) for order in orders]
+    return [build_order_response(session, order) for order in orders]
 
 
 def mark_order_as_paid(session: Session, user: User, order_id: int) -> OrderResponse:
@@ -103,7 +104,7 @@ def mark_order_as_paid(session: Session, user: User, order_id: int) -> OrderResp
     session.add(order)
     session.commit()
     session.refresh(order)
-    return _build_order_response(session, order)
+    return build_order_response(session, order)
 
 
 def admin_update_order_status(session: Session, order_id: int, new_status: str) -> OrderResponse:
@@ -121,4 +122,4 @@ def admin_update_order_status(session: Session, order_id: int, new_status: str) 
     session.add(order)
     session.commit()
     session.refresh(order)
-    return _build_order_response(session, order)
+    return build_order_response(session, order)

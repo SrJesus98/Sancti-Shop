@@ -37,7 +37,10 @@
                             <a href="/views/orders" class="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">📦 Mis pedidos</a>
                             {% if user.rol == 'admin' %}
                             <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                            <a href="/views/admin/products" class="block px-4 py-2.5 text-sm text-accent-600 dark:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">⚙️ Panel admin</a>
+                            <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Panel Admin</div>
+                            <a href="/views/admin/products" class="block px-4 py-2.5 text-sm text-accent-600 dark:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">📦 Productos</a>
+                            <a href="/views/admin/orders" class="block px-4 py-2.5 text-sm text-accent-600 dark:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">📋 Órdenes</a>
+                            <a href="/views/admin/users" class="block px-4 py-2.5 text-sm text-accent-600 dark:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">👥 Usuarios</a>
                             {% endif %}
                             <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                             <a href="/api/auth/logout" class="block px-4 py-2.5 text-sm text-gray-500 hover:text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition">🚪 Cerrar sesión</a>
@@ -75,7 +78,10 @@
                 <a href="/views/profile" class="block px-4 py-3 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg font-medium transition">👤 Mi perfil</a>
                 <a href="/views/orders" class="block px-4 py-3 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg font-medium transition">📦 Mis pedidos</a>
                 {% if user.rol == 'admin' %}
-                <a href="/views/admin/products" class="block px-4 py-3 rounded-lg text-accent-600 dark:text-accent-400 hover:bg-gray-100 dark-hover-bg font-medium transition">⚙️ Panel admin</a>
+                <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Panel Admin</div>
+                <a href="/views/admin/products" class="block px-4 py-3 rounded-lg text-accent-600 dark:text-accent-400 hover:bg-gray-100 dark-hover-bg font-medium transition">📦 Productos</a>
+                <a href="/views/admin/orders" class="block px-4 py-3 rounded-lg text-accent-600 dark:text-accent-400 hover:bg-gray-100 dark-hover-bg font-medium transition">📋 Órdenes</a>
+                <a href="/views/admin/users" class="block px-4 py-3 rounded-lg text-accent-600 dark:text-accent-400 hover:bg-gray-100 dark-hover-bg font-medium transition">👥 Usuarios</a>
                 {% endif %}
                 <hr class="border-gray-200 dark:border-gray-700 my-2">
                 <a href="/api/auth/logout" class="block px-4 py-3 rounded-lg text-gray-500 hover:text-red-500 hover:bg-gray-100 dark-hover-bg transition">🚪 Cerrar sesión</a>

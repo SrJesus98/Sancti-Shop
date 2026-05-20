@@ -26,7 +26,7 @@ def seed_database() -> None:
             email="admin@test.com",
             hashed_password=get_password_hash("Admin123!"),
             rol="admin",
-            scopes=["admin:read", "user:read"],
+            scopes=["admin:read", "user:read", "admin:products", "admin:orders", "admin:users"],
         )
         user = User(
             email="user@test.com",

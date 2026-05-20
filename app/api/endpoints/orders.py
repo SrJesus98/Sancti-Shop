@@ -5,11 +5,12 @@ from sqlmodel import Session
 
 from app.api.dependencies.auth import get_current_user, require_scopes
 from app.core.limiter import limiter
-from app.db.models import User
+from app.db.models import Order, User
 from app.db.session import get_session
 from app.schemas.orders import AdminOrderStatusUpdateRequest, OrderResponse
 from app.services.orders import (
     admin_update_order_status,
+    build_order_response,
     checkout_from_cart,
     list_orders_for_user,
     mark_order_as_paid,
@@ -48,6 +49,16 @@ def pay_order_endpoint(
 ) -> OrderResponse:
     """User-side payment flow transition En proceso -> Pagada."""
     return mark_order_as_paid(session, current_user, order_id)
+
+
+@router.get("/admin", response_model=list[OrderResponse])
+def admin_list_orders(
+    session: Session = Depends(get_session),
+    _: User = Depends(require_scopes(ADMIN_ORDER_SCOPES)),
+) -> list[OrderResponse]:
+    """List all orders for admin."""
+    orders = session.query(Order).order_by(Order.created_at.desc()).all()
+    return [build_order_response(session, o) for o in orders]
 
 
 @router.patch("/{order_id}/status", response_model=OrderResponse)

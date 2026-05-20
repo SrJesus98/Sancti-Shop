@@ -1,17 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Panel Admin — E-commerce{% endblock %}
+{% block title %}Panel Admin — Productos{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800">Gestión de productos</h1>
-        <button onclick="showCreateForm()"
-                class="bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 font-semibold transition">
+        <button onclick="openCreateModal()"
+                class="bg-primary-600 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 font-semibold transition shadow-sm">
             + Nuevo producto
         </button>
     </div>
 
-    {# Tabla de productos #}
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
         <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
@@ -33,7 +32,7 @@
                     <td class="px-6 py-4 text-sm text-gray-500">{{ product.category or '-' }}</td>
                     <td class="px-6 py-4 text-right font-medium">${{ "%.2f"|format(product.price) }}</td>
                     <td class="px-6 py-4 text-right">
-                        <span class="{% if product.stock <= 0 %}text-red-500{% elif product.stock <= 5 %}text-yellow-500{% else %}text-green-600{% endif %} font-medium">
+                        <span class="{% if product.stock <= 0 %}text-red-500 font-semibold{% elif product.stock <= 5 %}text-yellow-500 font-semibold{% else %}text-green-600{% endif %} font-medium">
                             {{ product.stock }}
                         </span>
                     </td>
@@ -44,11 +43,12 @@
                         <span class="text-red-400">❌</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="editProduct({{ product.id }})" class="text-primary-600 hover:text-primary-700 text-sm font-medium mr-3">Editar</button>
-                        <button onclick="toggleProduct({{ product.id }})" class="text-gray-500 hover:text-red-500 text-sm font-medium">
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="openEditModal({{ product.id }})" class="text-primary-600 hover:text-primary-700 text-sm font-medium">Editar</button>
+                        <button onclick="toggleProduct({{ product.id }})" class="text-gray-500 hover:text-yellow-600 text-sm font-medium">
                             {% if product.is_active %}Desactivar{% else %}Activar{% endif %}
                         </button>
+                        <button onclick="deleteProduct({{ product.id }})" class="text-red-500 hover:text-red-700 text-sm font-medium">Eliminar</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -61,21 +61,170 @@
         </table>
     </div>
 </div>
+
+<div id="productModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            <div class="px-6 py-5 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Nuevo producto</h3>
+            </div>
+            <form id="productForm" onsubmit="submitProductForm(event)" class="p-6 space-y-4">
+                <input type="hidden" id="productId" value="">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                    <input type="text" id="inputName" required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <textarea id="inputDescription" rows="3"
+                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
+                        <input type="number" id="inputPrice" step="0.01" min="0.01" required
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                        <input type="number" id="inputStock" min="0" required
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                    <input type="text" id="inputCategory"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
+                    <input type="text" id="inputImageUrl"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="inputActive" checked
+                           class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
+                    <label for="inputActive" class="text-sm font-medium text-gray-700">Activo</label>
+                </div>
+                <div id="modalError" class="hidden text-red-500 text-sm font-medium"></div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal()"
+                            class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Cancelar</button>
+                    <button type="submit" id="modalSubmitBtn"
+                            class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition shadow-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 const token = localStorage.getItem('access_token');
 
+function openCreateModal() {
+    document.getElementById('productId').value = '';
+    document.getElementById('modalTitle').textContent = 'Nuevo producto';
+    document.getElementById('productForm').reset();
+    document.getElementById('inputActive').checked = true;
+    document.getElementById('modalError').classList.add('hidden');
+    openModal();
+}
+
+async function openEditModal(productId) {
+    document.getElementById('modalError').classList.add('hidden');
+    try {
+        const res = await fetch(`/api/products/${productId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Error al cargar producto');
+        const p = await res.json();
+        document.getElementById('productId').value = p.id;
+        document.getElementById('modalTitle').textContent = 'Editar producto';
+        document.getElementById('inputName').value = p.name;
+        document.getElementById('inputDescription').value = p.description || '';
+        document.getElementById('inputPrice').value = p.price;
+        document.getElementById('inputStock').value = p.stock;
+        document.getElementById('inputCategory').value = p.category || '';
+        document.getElementById('inputImageUrl').value = p.image_url || '';
+        document.getElementById('inputActive').checked = p.is_active;
+        openModal();
+    } catch (err) {
+        showToast('Error al cargar producto', 'error');
+    }
+}
+
+function openModal() {
+    const modal = document.getElementById('productModal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('modalContent').classList.remove('scale-95', 'opacity-0');
+        document.getElementById('modalContent').classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeModal() {
+    const content = document.getElementById('modalContent');
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        document.getElementById('productModal').classList.add('hidden');
+    }, 200);
+}
+
+async function submitProductForm(event) {
+    event.preventDefault();
+    const productId = document.getElementById('productId').value;
+    const isEdit = !!productId;
+    const url = isEdit ? `/api/products/${productId}` : '/api/products';
+    const method = isEdit ? 'PUT' : 'POST';
+    const errorDiv = document.getElementById('modalError');
+    errorDiv.classList.add('hidden');
+
+    const body = {
+        name: document.getElementById('inputName').value.trim(),
+        description: document.getElementById('inputDescription').value.trim() || null,
+        price: parseFloat(document.getElementById('inputPrice').value),
+        stock: parseInt(document.getElementById('inputStock').value),
+        category: document.getElementById('inputCategory').value.trim() || null,
+        image_url: document.getElementById('inputImageUrl').value.trim() || null,
+        is_active: document.getElementById('inputActive').checked,
+    };
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            const data = await res.json();
+            errorDiv.textContent = data.detail || 'Error al guardar producto';
+            errorDiv.classList.remove('hidden');
+        }
+    } catch (err) {
+        errorDiv.textContent = 'Error de conexión';
+        errorDiv.classList.remove('hidden');
+    }
+}
+
 async function toggleProduct(productId) {
-    // Obtener datos actuales del producto y toggle is_active
     try {
         const getRes = await fetch(`/api/products/${productId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!getRes.ok) throw new Error();
         const product = await getRes.json();
 
-        const res = await fetch(`/api/products/update/${productId}`, {
+        const res = await fetch(`/api/products/${productId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -83,37 +232,22 @@ async function toggleProduct(productId) {
             },
             body: JSON.stringify({ is_active: !product.is_active })
         });
-
         if (res.ok) location.reload();
+        else showToast('Error al actualizar producto', 'error');
     } catch (err) {
         showToast('Error al actualizar producto', 'error');
     }
 }
 
-function editProduct(productId) {
-    window.location.href = `/views/admin/products?edit=${productId}`;
-}
-
-function showCreateForm() {
-    // Por ahora simple
-    const name = prompt('Nombre del producto:');
-    if (!name) return;
-    const price = prompt('Precio:');
-    if (!price) return;
-    const stock = prompt('Stock:') || '0';
-    const category = prompt('Categoría:') || '';
-
-    fetch('/api/products/create', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, price: parseFloat(price), stock: parseInt(stock), category })
+function deleteProduct(productId) {
+    if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+    fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
     }).then(r => {
         if (r.ok) location.reload();
-        else r.json().then(d => showToast(d.detail || 'Error', 'error'));
-    });
+        else showToast('Error al eliminar producto', 'error');
+    }).catch(() => showToast('Error de conexión', 'error'));
 }
 </script>
 {% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Panel Admin — Órdenes{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Gestión de órdenes</h1>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Usuario</th>
+                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Total</th>
+                    <th class="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase">Estado</th>
+                    <th class="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200" id="ordersTableBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="orderDetailModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-50" onclick="closeDetailModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Detalle de orden</h3>
+                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-4" id="orderDetailContent">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const token = localStorage.getItem('access_token');
+
+const statusColors = {
+    'En proceso': 'bg-yellow-100 text-yellow-800',
+    'Pagada': 'bg-blue-100 text-blue-800',
+    'Lista': 'bg-green-100 text-green-700',
+    'Entregada': 'bg-green-200 text-green-900',
+};
+
+async function loadOrders() {
+    try {
+        const res = await fetch('/api/orders/admin', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        const orders = await res.json();
+        const tbody = document.getElementById('ordersTableBody');
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500">No hay órdenes registradas</td></tr>';
+            return;
+        }
+        tbody.innerHTML = orders.map(o => {
+            const nextStatus = o.status === 'Pagada' ? 'Lista' : (o.status === 'Lista' ? 'Entregada' : null);
+            const statusClass = statusColors[o.status] || 'bg-gray-100 text-gray-800';
+            return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 font-medium text-gray-800">#${o.id}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">Usuario #${o.user_id}</td>
+                <td class="px-6 py-4 text-right font-medium">$${o.total.toFixed(2)}</td>
+                <td class="px-6 py-4 text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">${o.status}</span>
+                </td>
+                <td class="px-6 py-4 text-center text-sm text-gray-500">${new Date(o.created_at).toLocaleString()}</td>
+                <td class="px-6 py-4 text-right space-x-2">
+                    <button onclick="showOrderDetail(${o.id})" class="text-primary-600 hover:text-primary-700 text-sm font-medium">Ver detalle</button>
+                    ${nextStatus ? `<button onclick="changeOrderStatus(${o.id}, '${nextStatus}')" class="text-green-600 hover:text-green-700 text-sm font-medium">Marcar ${nextStatus}</button>` : ''}
+                </td>
+            </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-red-500">Error al cargar órdenes</td></tr>';
+    }
+}
+
+async function changeOrderStatus(orderId, newStatus) {
+    try {
+        const res = await fetch(`/api/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) location.reload();
+        else {
+            const data = await res.json();
+            showToast(data.detail || 'Error al cambiar estado', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function showOrderDetail(orderId) {
+    const content = document.getElementById('orderDetailContent');
+    content.innerHTML = '<p class="text-gray-500">Cargando...</p>';
+    document.getElementById('orderDetailModal').classList.remove('hidden');
+
+    try {
+        const res = await fetch('/api/orders/admin', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orders = await res.json();
+        const order = orders.find(o => o.id === orderId);
+        if (!order) {
+            content.innerHTML = '<p class="text-red-500">Orden no encontrada</p>';
+            return;
+        }
+        const statusClass = statusColors[order.status] || 'bg-gray-100 text-gray-800';
+        content.innerHTML = `
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-500">Orden #${order.id}</p>
+                    <p class="font-medium">Usuario ID: ${order.user_id}</p>
+                </div>
+                <div class="text-right">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">${order.status}</span>
+                </div>
+            </div>
+            <hr class="border-gray-200">
+            <div class="text-sm">
+                <p class="text-gray-500 mb-1">Creada: ${new Date(order.created_at).toLocaleString()}</p>
+                ${order.updated_at ? `<p class="text-gray-500 mb-1">Actualizada: ${new Date(order.updated_at).toLocaleString()}</p>` : ''}
+            </div>
+            <hr class="border-gray-200">
+            <h4 class="font-semibold text-gray-700">Items</h4>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-2 text-gray-500">Producto</th>
+                        <th class="text-center py-2 text-gray-500">Cant.</th>
+                        <th class="text-right py-2 text-gray-500">Precio</th>
+                        <th class="text-right py-2 text-gray-500">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${order.items.map(item => `
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2">${item.product_name || `Producto #${item.product_id}`}</td>
+                            <td class="py-2 text-center">${item.quantity}</td>
+                            <td class="py-2 text-right">$${item.price.toFixed(2)}</td>
+                            <td class="py-2 text-right font-medium">$${(item.quantity * item.price).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="py-3 text-right font-semibold text-gray-700">Total</td>
+                        <td class="py-3 text-right font-bold text-gray-800">$${order.total.toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+    } catch (err) {
+        content.innerHTML = '<p class="text-red-500">Error al cargar detalle</p>';
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('orderDetailModal').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', loadOrders);
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Panel Admin — Usuarios{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Gestión de usuarios</h1>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th class="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase">Rol</th>
+                    <th class="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase">Fecha registro</th>
+                    <th class="text-center px-6 py-3 text-xs font-medium text-gray-500 uppercase">Activo</th>
+                    <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200" id="usersTableBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const token = localStorage.getItem('access_token');
+
+async function loadUsers() {
+    try {
+        const res = await fetch('/api/admin/users', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        const users = await res.json();
+        const tbody = document.getElementById('usersTableBody');
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">No hay usuarios registrados</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map(u => `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 font-medium text-gray-800">${u.email}</td>
+                <td class="px-6 py-4 text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${u.rol === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}">${u.rol}</span>
+                </td>
+                <td class="px-6 py-4 text-center text-sm text-gray-500">${new Date(u.created_at).toLocaleDateString()}</td>
+                <td class="px-6 py-4 text-center">
+                    ${u.is_active ? '<span class="text-green-500 font-medium">Sí</span>' : '<span class="text-red-500 font-medium">No</span>'}
+                </td>
+                <td class="px-6 py-4 text-right space-x-2">
+                    <button onclick="toggleUserRole(${u.id}, '${u.rol}')" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                        ${u.rol === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+                    </button>
+                    <button onclick="toggleUserActive(${u.id})" class="text-gray-500 hover:text-yellow-600 text-sm font-medium">
+                        ${u.is_active ? 'Desactivar' : 'Activar'}
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-red-500">Error al cargar usuarios</td></tr>';
+    }
+}
+
+async function toggleUserRole(userId, currentRol) {
+    const newRol = currentRol === 'admin' ? 'user' : 'admin';
+    if (!confirm(`¿Cambiar rol a "${newRol}"?`)) return;
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/role`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ rol: newRol })
+        });
+        if (res.ok) location.reload();
+        else {
+            const data = await res.json();
+            showToast(data.detail || 'Error al cambiar rol', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function toggleUserActive(userId) {
+    try {
+        const res = await fetch(`/api/admin/users/${userId}/toggle-active`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) location.reload();
+        else {
+            const data = await res.json();
+            showToast(data.detail || 'Error al cambiar estado', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+{% endblock %}

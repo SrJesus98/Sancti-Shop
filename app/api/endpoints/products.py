@@ -20,6 +20,17 @@ router = APIRouter(prefix="/products", tags=["products"])
 ADMIN_PRODUCT_SCOPES = ["admin:products"]
 
 
+@router.get("/{product_id}", response_model=ProductResponse)
+def get_product(
+    product_id: int,
+    session: Session = Depends(get_session),
+) -> ProductResponse:
+    """Public endpoint to get a single product by ID."""
+    from app.services.products import get_product_or_404
+    product = get_product_or_404(session, product_id)
+    return ProductResponse.model_validate(product)
+
+
 @router.get("", response_model=PublicProductListResponse)
 @limiter.limit("100/minute")
 def list_products(
