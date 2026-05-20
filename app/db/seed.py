@@ -44,14 +44,14 @@ def seed_database() -> None:
 
         # ── Products ───────────────────────────────────────────
         products = [
-            Product(name="Laptop Pro", description="Potente laptop para trabajo y gaming", price=1200.00, stock=10, category="Electrónica"),
-            Product(name="Mouse Inalámbrico", description="Mouse ergonómico con batería de 6 meses", price=35.50, stock=25, category="Electrónica"),
-            Product(name="Teclado Mecánico", description="Switch RGB retroiluminado, diseño compacto", price=89.99, stock=15, category="Electrónica"),
-            Product(name="Audífonos Bluetooth", description="Cancelación de ruido, 30h batería", price=59.99, stock=20, category="Electrónica"),
-            Product(name="Monitor 27\" 4K", description="Panel IPS, 144Hz, HDR10", price=450.00, stock=8, category="Electrónica"),
-            Product(name="Camiseta Algodón", description="100% algodón orgánico, varios colores", price=24.99, stock=50, category="Ropa"),
-            Product(name="Chaqueta Impermeable", description="Capa ligera, resistente al agua", price=79.99, stock=12, category="Ropa"),
-            Product(name="Libro: Python Avanzado", description="Guía completa de Python 3.13", price=45.00, stock=30, category="Libros"),
+            Product(name="Laptop Pro", description="Potente laptop para trabajo y gaming", price=1200.00, stock=10, category="Electrónica", image_url="/static/images/products/laptop.jpg"),
+            Product(name="Mouse Inalámbrico", description="Mouse ergonómico con batería de 6 meses", price=35.50, stock=25, category="Electrónica", image_url="/static/images/products/mouse.jpg"),
+            Product(name="Teclado Mecánico", description="Switch RGB retroiluminado, diseño compacto", price=89.99, stock=15, category="Electrónica", image_url="/static/images/products/teclado.jpg"),
+            Product(name="Audífonos Bluetooth", description="Cancelación de ruido, 30h batería", price=59.99, stock=20, category="Electrónica", image_url="/static/images/products/audifonos.jpg"),
+            Product(name='Monitor 27" 4K', description="Panel IPS, 144Hz, HDR10", price=450.00, stock=8, category="Electrónica", image_url="/static/images/products/monitor.jpg"),
+            Product(name="Camiseta Algodón", description="100% algodón orgánico, varios colores", price=24.99, stock=50, category="Ropa", image_url="/static/images/products/camiseta.jpg"),
+            Product(name="Chaqueta Impermeable", description="Capa ligera, resistente al agua", price=79.99, stock=12, category="Ropa", image_url="/static/images/products/chaqueta.jpg"),
+            Product(name="Libro: Python Avanzado", description="Guía completa de Python 3.13", price=45.00, stock=30, category="Libros", image_url="/static/images/products/libro.jpg"),
         ]
         for p in products:
             session.add(p)

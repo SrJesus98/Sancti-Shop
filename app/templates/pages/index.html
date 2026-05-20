@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Inicio — E-commerce{% endblock %}
+{% block title %}Inicio — SanctiShop{% endblock %}
 
 {% block content %}
 {# ==================== HERO CAROUSEL ==================== #}
@@ -9,31 +9,43 @@
             {
                 "title": "Los mejores productos",
                 "subtitle": "Descubre nuestra colección con los precios más competitivos del mercado",
-                "color": "from-primary-600 to-primary-800",
+                "color": "from-primary-700 to-primary-900",
+                "img": "/static/images/sancti/plaza.jpg",
                 "btn_text": "Ver ofertas",
                 "btn_link": "#products"
             },
             {
-                "title": "Envío gratis",
-                "subtitle": "En todos tus pedidos superiores a $50. Aprovecha esta oferta por tiempo limitado",
-                "color": "from-accent-600 to-accent-800",
+                "title": "Envío gratis a toda Cuba",
+                "subtitle": "En todos tus pedidos superiores a $50. De Sancti Spíritus para todo el país",
+                "color": "from-accent-700 to-accent-900",
+                "img": "/static/images/sancti/puente.jpg",
                 "btn_text": "Comprar ahora",
                 "btn_link": "#products"
             },
             {
-                "title": "Nuevos productos",
-                "subtitle": "Cada semana agregamos nuevos artículos a nuestra tienda. No te lo pierdas",
-                "color": "from-primary-800 to-primary-900",
-                "btn_text": "Ver novedades",
+                "title": "Sancti Spíritus te espera",
+                "subtitle": "Nuestra provincia, tu tienda. Productos de calidad con el espíritu que nos caracteriza",
+                "color": "from-primary-800 to-accent-900",
+                "img": "/static/images/sancti/colonial.jpg",
+                "btn_text": "Ver productos",
                 "btn_link": "#products"
             }
         ] %}
 
         {% for slide in slides %}
         <div class="slide {% if loop.first %}active{% endif %}">
-            <div class="w-full h-full bg-gradient-to-br {{ slide.color }} flex items-center">
-                <div class="slide-overlay" style="background: linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);">
+            <div class="w-full h-full relative overflow-hidden">
+                {# Background image #}
+                <div class="absolute inset-0">
+                    <img src="{{ slide.img }}" alt="" class="w-full h-full object-cover" loading="{% if loop.first %}eager{% else %}lazy{% endif %}">
+                    <div class="absolute inset-0 bg-gradient-to-r {{ slide.color }} opacity-85"></div>
+                </div>
+                {# Content #}
+                <div class="relative z-10 h-full flex items-center" style="background: linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 70%, transparent 100%);">
                     <div class="slide-content animate-on-scroll visible">
+                        <span class="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full mb-3">
+                            🏝️ SanctiShop
+                        </span>
                         <h2>{{ slide.title }}</h2>
                         <p>{{ slide.subtitle }}</p>
                         <a href="{{ slide.btn_link }}" class="inline-block bg-white text-gray-900 px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 transition shadow-lg hover:shadow-xl">
@@ -164,6 +176,46 @@
         <p class="text-gray-400 dark:text-gray-500 mt-2">Vuelve pronto, estamos agregando nuevos productos.</p>
     </div>
     {% endif %}
+</section>
+
+{# ==================== SANCTI SPÍRITUS SECTION ==================== #}
+<section class="relative py-16 overflow-hidden">
+    {# Background #}
+    <div class="absolute inset-0">
+        <img src="/static/images/sancti/colonial.jpg" alt="Sancti Spíritus" class="w-full h-full object-cover" loading="lazy">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-900/95 via-primary-800/90 to-primary-900/95"></div>
+    </div>
+
+    <div class="relative z-10 container mx-auto px-4">
+        <div class="text-center mb-10 animate-on-scroll">
+            <span class="inline-block bg-white/10 backdrop-blur-sm text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-4">
+                🌴 ORGULLO ESPIRITUANO
+            </span>
+            <h2 class="text-3xl md:text-4xl font-bold text-white">Hecho en Sancti Spíritus</h2>
+            <p class="text-blue-200 mt-3 max-w-2xl mx-auto text-lg">
+                Una tienda creada desde el corazón de Cuba, para todos los cubanos.
+                Llevamos la calidad y el espíritu de nuestra provincia a tu hogar.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center animate-on-scroll delay-1">
+                <div class="text-4xl mb-3">🏛️</div>
+                <h4 class="text-white font-semibold mb-2">Ciudad Patrimonio</h4>
+                <p class="text-blue-200 text-sm">Sancti Spíritus, fundada en 1522, es una de las ciudades coloniales más hermosas de Cuba.</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center animate-on-scroll delay-2">
+                <div class="text-4xl mb-3">🌊</div>
+                <h4 class="text-white font-semibold mb-2">Río Yayabo</h4>
+                <p class="text-blue-200 text-sm">Navegando por el río Yayabo, el corazón de nuestra provincia, fuente de vida e inspiración.</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center animate-on-scroll delay-3">
+                <div class="text-4xl mb-3">🤝</div>
+                <h4 class="text-white font-semibold mb-2">Espíritu Solidario</h4>
+                <p class="text-blue-200 text-sm">El mismo espíritu de colaboración que nos define como espirituanos, ahora en cada entrega.</p>
+            </div>
+        </div>
+    </div>
 </section>
 
 {# ==================== FEATURES BANNER ==================== #}
