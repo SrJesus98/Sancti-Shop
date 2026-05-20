@@ -2,94 +2,205 @@
 {% block title %}Inicio — E-commerce{% endblock %}
 
 {% block content %}
-{# ==================== HERO SECTION ==================== #}
-<section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-    <div class="container mx-auto px-4 py-16 md:py-24">
-        <div class="max-w-2xl">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">Tu tienda online de confianza</h1>
-            <p class="text-lg md:text-xl text-primary-100 mb-8">Encuentra los mejores productos con los mejores precios</p>
-            <a href="#products" class="inline-block bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition">
-                Ver productos
-            </a>
-        </div>
-    </div>
-</section>
+{# ==================== HERO CAROUSEL ==================== #}
+<section class="container mx-auto px-4 mt-6 mb-8">
+    <div class="hero-carousel">
+        {% set slides = [
+            {
+                "title": "Los mejores productos",
+                "subtitle": "Descubre nuestra colección con los precios más competitivos del mercado",
+                "color": "from-primary-600 to-primary-800",
+                "btn_text": "Ver ofertas",
+                "btn_link": "#products"
+            },
+            {
+                "title": "Envío gratis",
+                "subtitle": "En todos tus pedidos superiores a $50. Aprovecha esta oferta por tiempo limitado",
+                "color": "from-accent-600 to-accent-800",
+                "btn_text": "Comprar ahora",
+                "btn_link": "#products"
+            },
+            {
+                "title": "Nuevos productos",
+                "subtitle": "Cada semana agregamos nuevos artículos a nuestra tienda. No te lo pierdas",
+                "color": "from-primary-800 to-primary-900",
+                "btn_text": "Ver novedades",
+                "btn_link": "#products"
+            }
+        ] %}
 
-{# ==================== CATEGORÍAS ==================== #}
-{% if categories %}
-<section class="bg-gray-50 py-8">
-    <div class="container mx-auto px-4">
-        <div class="flex flex-wrap gap-2">
-            <a href="#products" class="px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium">Todos</a>
-            {% for cat in categories %}
-            <a href="/views/?category={{ cat }}" class="px-4 py-2 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-primary-50 hover:border-primary-300 text-sm font-medium transition">
-                {{ cat }}
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-{# ==================== PRODUCTOS ==================== #}
-<section id="products" class="py-12">
-    <div class="container mx-auto px-4">
-        <h2 class="text-2xl font-bold text-gray-800 mb-8">Productos destacados</h2>
-
-        {% if products %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {% for product in products %}
-            <div class="product-card bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-                {# Imagen del producto #}
-                <a href="/views/product/{{ product.id }}">
-                    <div class="h-48 bg-gradient-to-br from-primary-100 to-primary-50 flex items-center justify-center">
-                        {% if product.image_url %}
-                        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
-                        {% else %}
-                        <svg class="w-16 h-16 text-primary-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                        </svg>
-                        {% endif %}
+        {% for slide in slides %}
+        <div class="slide {% if loop.first %}active{% endif %}">
+            <div class="w-full h-full bg-gradient-to-br {{ slide.color }} flex items-center">
+                <div class="slide-overlay" style="background: linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);">
+                    <div class="slide-content animate-on-scroll visible">
+                        <h2>{{ slide.title }}</h2>
+                        <p>{{ slide.subtitle }}</p>
+                        <a href="{{ slide.btn_link }}" class="inline-block bg-white text-gray-900 px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 transition shadow-lg hover:shadow-xl">
+                            {{ slide.btn_text }}
+                        </a>
                     </div>
-                </a>
-
-                {# Info del producto #}
-                <div class="p-4">
-                    <span class="text-xs text-gray-500 uppercase tracking-wide">{{ product.category or 'General' }}</span>
-                    <a href="/views/product/{{ product.id }}">
-                        <h3 class="text-lg font-semibold text-gray-800 mt-1 hover:text-primary-600 transition">{{ product.name }}</h3>
-                    </a>
-                    <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ product.description or '' }}</p>
-
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-xl font-bold text-primary-600">${{ "%.2f"|format(product.price) }}</span>
-                        {% if product.stock > 0 %}
-                        <button onclick="addToCart({{ product.id }})"
-                                class="bg-accent-500 text-white px-4 py-2 rounded-lg hover:bg-accent-600 text-sm font-medium transition">
-                            Agregar
-                        </button>
-                        {% else %}
-                        <span class="text-red-500 text-sm font-medium">Sin stock</span>
-                        {% endif %}
-                    </div>
-
-                    {% if product.stock > 0 and product.stock <= 5 %}
-                    <p class="text-xs text-yellow-600 mt-2">Solo quedan {{ product.stock }} unidades</p>
-                    {% endif %}
                 </div>
             </div>
+        </div>
+        {% endfor %}
+
+        <button class="carousel-btn prev" aria-label="Anterior">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </button>
+        <button class="carousel-btn next" aria-label="Siguiente">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+            </svg>
+        </button>
+
+        <div class="carousel-dots">
+            {% for slide in slides %}
+            <button class="carousel-dot {% if loop.first %}active{% endif %}" aria-label="Slide {{ loop.index }}"></button>
             {% endfor %}
         </div>
-        {% else %}
-        {# Sin productos #}
-        <div class="text-center py-16">
-            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
-            <h3 class="text-xl font-semibold text-gray-500">No hay productos disponibles</h3>
-            <p class="text-gray-400 mt-2">Vuelve pronto, estamos agregando nuevos productos.</p>
-        </div>
-        {% endif %}
     </div>
 </section>
+
+{# ==================== SEARCH + FILTERS ==================== #}
+<section class="container mx-auto px-4 mb-8">
+    <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        {# Search #}
+        <div class="search-container flex-1">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" class="search-input" placeholder="Buscar productos por nombre o categoría..." autocomplete="off">
+            <div id="search-results" class="search-results"></div>
+        </div>
+
+        {# Mobile filter toggle #}
+        <button class="md:hidden px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark-hover-bg transition" onclick="document.getElementById('filter-drawer').classList.toggle('open')">
+            Filtrar ▼
+        </button>
+    </div>
+
+    {# Filter chips #}
+    <div class="flex flex-wrap gap-2 mt-4" id="filter-chips">
+        <button class="filter-chip active" data-filter="all">Todos</button>
+        {% for cat in categories %}
+        <button class="filter-chip" data-filter="{{ cat }}">{{ cat }}</button>
+        {% endfor %}
+    </div>
+</section>
+
+{# ==================== PRODUCT SECTION ==================== #}
+<section id="products" class="container mx-auto px-4 pb-12">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Productos</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400" id="product-count">{{ products|length }} productos</span>
+    </div>
+
+    {# Product grid with skeletons #}
+    <div id="product-grid" class="product-grid">
+        {# Load real products #}
+        {% for product in products %}
+        <div class="product-card-modern animate-on-scroll delay-{{ (loop.index % 5) + 1 }}" data-category="{{ product.category or 'General' }}">
+            {# Image #}
+            <a href="/views/product/{{ product.id }}">
+                <div class="card-image">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center">
+                        <svg class="w-16 h-16 text-primary-300 dark:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+
+                    {# Badges #}
+                    {% if product.stock <= 0 %}
+                    <span class="card-badge stock-low">Agotado</span>
+                    {% elif product.stock <= 5 %}
+                    <span class="card-badge stock-low">Últimas {{ product.stock }}</span>
+                    {% else %}
+                    <span class="card-badge new">Nuevo</span>
+                    {% endif %}
+
+                    {# Price overlay #}
+                    <div class="card-image-overlay">
+                        <span class="card-category">{{ product.category or 'General' }}</span>
+                        <div class="card-price">${{ "%.2f"|format(product.price) }}</div>
+                    </div>
+                </div>
+            </a>
+
+            {# Quick add button #}
+            {% if product.stock > 0 %}
+            <button onclick="addToCart({{ product.id }})" class="card-quick-add ripple-btn" title="Agregar al carrito">+</button>
+            {% endif %}
+
+            {# Body #}
+            <a href="/views/product/{{ product.id }}">
+                <div class="card-body">
+                    <h3>{{ product.name }}</h3>
+                    {% if product.description %}
+                    <p>{{ product.description }}</p>
+                    {% endif %}
+                    <div class="card-footer">
+                        <span class="card-stock {% if product.stock > 5 %}in-stock{% elif product.stock > 0 %}low-stock{% else %}out-of-stock{% endif %}">
+                            <span class="card-stock-dot {% if product.stock > 5 %}in-stock{% elif product.stock > 0 %}low-stock{% else %}out-of-stock{% endif %}"></span>
+                            {% if product.stock > 5 %}En stock{% elif product.stock > 0 %}Quedan {{ product.stock }}{% else %}Agotado{% endif %}
+                        </span>
+                        <span class="text-sm font-semibold text-primary-500 dark:text-primary-400">${{ "%.2f"|format(product.price) }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Empty state #}
+    {% if not products %}
+    <div class="text-center py-20 animate-on-scroll visible">
+        <div class="text-6xl mb-4">📦</div>
+        <h3 class="text-xl font-semibold text-gray-500 dark:text-gray-400">No hay productos disponibles</h3>
+        <p class="text-gray-400 dark:text-gray-500 mt-2">Vuelve pronto, estamos agregando nuevos productos.</p>
+    </div>
+    {% endif %}
+</section>
+
+{# ==================== FEATURES BANNER ==================== #}
+<section class="bg-gray-50 dark:bg-gray-800/50 py-12 border-y border-gray-200 dark:border-gray-700">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="text-center animate-on-scroll delay-1">
+                <div class="text-3xl mb-2">🚚</div>
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Envío gratis</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">En pedidos +$50</p>
+            </div>
+            <div class="text-center animate-on-scroll delay-2">
+                <div class="text-3xl mb-2">🔒</div>
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Pago seguro</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Datos protegidos</p>
+            </div>
+            <div class="text-center animate-on-scroll delay-3">
+                <div class="text-3xl mb-2">🔄</div>
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Devoluciones</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">30 días de garantía</p>
+            </div>
+            <div class="text-center animate-on-scroll delay-4">
+                <div class="text-3xl mb-2">💬</div>
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm">Soporte 24/7</h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Siempre contigo</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Pasar productos a JS para búsqueda
+const products = {{ products_json | tojson | safe }};
+document.addEventListener('DOMContentLoaded', function() {
+    initSearch(products);
+});
+</script>
 {% endblock %}

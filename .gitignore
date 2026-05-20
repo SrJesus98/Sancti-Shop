@@ -27,6 +27,7 @@ ENV/
 
 # Base de datos
 *.db
+*.db-journal
 *.sqlite
 *.sqlite3
 ecommerce.db

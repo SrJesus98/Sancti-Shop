@@ -74,11 +74,26 @@ async def home(
     categories = session.query(Product.category).filter(Product.is_active == True).distinct().all()
     categories = [c[0] for c in categories if c[0]]
 
+    # Serializar productos a dict para JS
+    products_json = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "stock": p.stock,
+            "category": p.category,
+            "description": p.description,
+            "image_url": p.image_url,
+        }
+        for p in products
+    ]
+
     return templates.TemplateResponse(
         request,
         "pages/index.html",
         _context(user, {
             "products": products,
+            "products_json": products_json,
             "categories": categories,
         })
     )

@@ -1,75 +1,88 @@
-<nav class="bg-white shadow-md border-b border-gray-200">
+<nav class="navbar-modern">
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
             {# Logo #}
             <a href="/views/" class="flex items-center space-x-2">
-                <span class="text-2xl font-bold text-primary-600">E-commerce</span>
+                <span class="text-2xl font-extrabold bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent">E-commerce</span>
             </a>
 
             {# Desktop menu #}
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="/views/" class="text-gray-600 hover:text-primary-600 font-medium transition">Inicio</a>
-                <a href="/views/cart" class="text-gray-600 hover:text-primary-600 font-medium transition">
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/views/" class="px-4 py-2 rounded-lg text-gray-600 dark-text-secondary hover:text-primary-600 hover:bg-primary-50 dark-hover-bg font-medium transition text-sm">
+                    Inicio
+                </a>
+                <a href="/views/cart" class="px-4 py-2 rounded-lg text-gray-600 dark-text-secondary hover:text-primary-600 hover:bg-primary-50 dark-hover-bg font-medium transition text-sm relative">
                     Carrito
-                    {% if cart_count and cart_count > 0 %}
-                    <span class="bg-accent-500 text-white text-xs rounded-full px-2 py-0.5 ml-1">{{ cart_count }}</span>
-                    {% endif %}
+                    <span class="cart-count hidden absolute -top-1 -right-1 bg-accent-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">0</span>
                 </a>
 
                 {% if user %}
                     {# Menú de usuario logueado #}
-                    <div class="relative" id="user-menu">
-                        <button onclick="toggleDropdown()" class="flex items-center space-x-1 text-gray-600 hover:text-primary-600 font-medium transition">
-                            <span>{{ user.email }}</span>
-                            <svg class="w-4 h-4 dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="relative ml-2" id="user-menu">
+                        <button onclick="toggleDropdown()" class="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 dark-text-secondary hover:bg-primary-50 dark-hover-bg transition text-sm font-medium">
+                            <div class="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center">
+                                <span class="text-xs font-bold text-primary-600">{{ user.email[0]|upper }}</span>
+                            </div>
+                            <span class="hidden lg:inline">{{ user.email.split('@')[0] }}</span>
+                            <svg class="w-3.5 h-3.5 dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </button>
-                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                            <a href="/views/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi perfil</a>
-                            <a href="/views/orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mis pedidos</a>
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1.5 z-50">
+                            <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ user.email }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">Rol: {{ user.rol }}</p>
+                            </div>
+                            <a href="/views/profile" class="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">👤 Mi perfil</a>
+                            <a href="/views/orders" class="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">📦 Mis pedidos</a>
                             {% if user.rol == 'admin' %}
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <a href="/views/admin/products" class="block px-4 py-2 text-sm text-accent-600 hover:bg-gray-100 font-medium">Panel admin</a>
+                            <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                            <a href="/views/admin/products" class="block px-4 py-2.5 text-sm text-accent-600 dark:text-accent-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">⚙️ Panel admin</a>
                             {% endif %}
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <a href="/auth/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cerrar sesión</a>
+                            <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                            <a href="/auth/logout" class="block px-4 py-2.5 text-sm text-gray-500 hover:text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition">🚪 Cerrar sesión</a>
                         </div>
                     </div>
                 {% else %}
                     {# Usuario no logueado #}
-                    <a href="/views/login" class="text-gray-600 hover:text-primary-600 font-medium transition">Iniciar sesión</a>
-                    <a href="/views/register" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 font-medium transition">Registrarse</a>
+                    <a href="/views/login" class="px-4 py-2 rounded-lg text-gray-600 dark-text-secondary hover:text-primary-600 hover:bg-primary-50 dark-hover-bg font-medium transition text-sm">Iniciar sesión</a>
+                    <a href="/views/register" class="ml-1 bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-700 font-semibold transition text-sm shadow-sm hover:shadow-md">Registrarse</a>
                 {% endif %}
+
+                {# Dark mode toggle #}
+                <button id="theme-toggle" class="theme-toggle ml-2" title="Cambiar tema">☀️</button>
             </div>
 
-            {# Mobile hamburger #}
-            <button id="menu-toggle" class="md:hidden text-gray-600 hover:text-gray-900" onclick="toggleMobileMenu()">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
+            {# Mobile: hamburger + theme toggle #}
+            <div class="flex items-center space-x-2 md:hidden">
+                <button id="theme-toggle-mobile" class="theme-toggle" title="Cambiar tema">☀️</button>
+                <button onclick="toggleMobileMenu()" class="p-2 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         {# Mobile menu #}
-        <div id="mobile-menu" class="hidden md:hidden pb-4">
-            <a href="/views/" class="block py-2 text-gray-600 hover:text-primary-600 font-medium">Inicio</a>
-            <a href="/views/cart" class="block py-2 text-gray-600 hover:text-primary-600 font-medium">
-                Carrito
-                {% if cart_count and cart_count > 0 %}
-                <span class="bg-accent-500 text-white text-xs rounded-full px-2 py-0.5 ml-1">{{ cart_count }}</span>
-                {% endif %}
+        <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-1">
+            <a href="/views/" class="block px-4 py-3 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg font-medium transition">🏠 Inicio</a>
+            <a href="/views/cart" class="block px-4 py-3 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg font-medium transition relative">
+                🛒 Carrito
+                <span class="cart-count hidden text-xs bg-accent-500 text-white rounded-full px-2 py-0.5 ml-1">0</span>
             </a>
             {% if user %}
-                <a href="/views/profile" class="block py-2 text-gray-600 hover:text-primary-600 font-medium">Mi perfil</a>
-                <a href="/views/orders" class="block py-2 text-gray-600 hover:text-primary-600 font-medium">Mis pedidos</a>
+                <a href="/views/profile" class="block px-4 py-3 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg font-medium transition">👤 Mi perfil</a>
+                <a href="/views/orders" class="block px-4 py-3 rounded-lg text-gray-600 dark-text-secondary hover:bg-gray-100 dark-hover-bg font-medium transition">📦 Mis pedidos</a>
                 {% if user.rol == 'admin' %}
-                <a href="/views/admin/products" class="block py-2 text-accent-600 hover:text-accent-700 font-medium">Panel admin</a>
+                <a href="/views/admin/products" class="block px-4 py-3 rounded-lg text-accent-600 dark:text-accent-400 hover:bg-gray-100 dark-hover-bg font-medium transition">⚙️ Panel admin</a>
                 {% endif %}
-                <a href="/auth/logout" class="block py-2 text-gray-600 hover:text-primary-600 font-medium">Cerrar sesión</a>
+                <hr class="border-gray-200 dark:border-gray-700 my-2">
+                <a href="/auth/logout" class="block px-4 py-3 rounded-lg text-gray-500 hover:text-red-500 hover:bg-gray-100 dark-hover-bg transition">🚪 Cerrar sesión</a>
             {% else %}
-                <a href="/views/login" class="block py-2 text-gray-600 hover:text-primary-600 font-medium">Iniciar sesión</a>
-                <a href="/views/register" class="block py-2 text-primary-600 font-medium">Registrarse</a>
+                <hr class="border-gray-200 dark:border-gray-700 my-2">
+                <a href="/views/login" class="block px-4 py-3 rounded-lg text-primary-600 font-medium hover:bg-primary-50 dark-hover-bg transition">🔑 Iniciar sesión</a>
+                <a href="/views/register" class="block px-4 py-3 rounded-lg bg-primary-600 text-white font-medium text-center hover:bg-primary-700 transition">📝 Registrarse</a>
             {% endif %}
         </div>
     </div>
