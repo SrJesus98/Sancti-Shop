@@ -30,6 +30,7 @@ def _build_cart_response(session: Session, user: User) -> CartResponse:
             CartItemResponse(
                 id=item.id,
                 product_id=item.product_id,
+                product_name=product.name,
                 quantity=item.quantity,
                 unit_price=float(product.price),
                 subtotal=subtotal,

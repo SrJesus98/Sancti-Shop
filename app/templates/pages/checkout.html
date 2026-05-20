@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Checkout — E-commerce{% endblock %}
+{% block title %}Checkout — SanctiShop{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
@@ -35,7 +35,7 @@ const token = localStorage.getItem('access_token');
 
 async function loadCheckout() {
     try {
-        const response = await fetch('/api/cart/items', {
+        const response = await fetch('/api/cart', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -58,13 +58,13 @@ function renderCheckoutItems(data) {
     let html = '';
     let total = 0;
     for (const item of data.items) {
-        const subtotal = item.product.price * item.quantity;
+        const subtotal = item.unit_price * item.quantity;
         total += subtotal;
         html += `
             <div class="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <div class="flex-1">
-                    <h3 class="font-semibold">${item.product.name}</h3>
-                    <p class="text-sm text-gray-500">$${item.product.price.toFixed(2)} x ${item.quantity}</p>
+                    <h3 class="font-semibold">${item.product_name || `Producto #${item.product_id}`}</h3>
+                    <p class="text-sm text-gray-500">$${item.unit_price.toFixed(2)} x ${item.quantity}</p>
                 </div>
                 <p class="font-bold">$${subtotal.toFixed(2)}</p>
             </div>
@@ -107,16 +107,13 @@ document.getElementById('pay-btn').addEventListener('click', async function() {
 
         if (payRes.ok) {
             const payment = await payRes.json();
-            resultEl.textContent = '✅ Pedido creado. Redirigiendo al pago...';
+            resultEl.textContent = '✅ Pedido creado. Procesando pago...';
             resultEl.className = 'text-center text-sm mt-2 text-green-600';
 
-            // Redirigir a la URL de pago
-            if (payment.redirect_url && payment.redirect_url !== 'pending') {
-                window.location.href = payment.redirect_url;
-            } else {
-                // Simular webhook de pago aprobado
-                setTimeout(async () => {
-                    await fetch('/api/payments/webhook', {
+            // Modo mock: simular webhook de pago aprobado directamente
+            setTimeout(async () => {
+                try {
+                    const webhookRes = await fetch('/api/payments/webhook', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -128,9 +125,25 @@ document.getElementById('pay-btn').addEventListener('click', async function() {
                             status: 'approved'
                         })
                     });
-                    window.location.href = '/views/orders';
-                }, 1500);
-            }
+                    if (webhookRes.ok) {
+                        window.location.href = '/views/orders';
+                    } else {
+                        resultEl.textContent = 'Error al confirmar pago';
+                        resultEl.className = 'text-center text-sm mt-2 text-red-500';
+                    }
+                } catch(e) {
+                    resultEl.textContent = 'Error de conexión en webhook';
+                    resultEl.className = 'text-center text-sm mt-2 text-red-500';
+                }
+                btn.disabled = false;
+                btn.textContent = 'Pagar ahora';
+            }, 1500);
+        } else {
+            const err = await payRes.json();
+            resultEl.textContent = err.detail || 'Error al crear el pago';
+            resultEl.className = 'text-center text-sm mt-2 text-red-500';
+            btn.disabled = false;
+            btn.textContent = 'Pagar ahora';
         }
     } catch (err) {
         resultEl.textContent = 'Error de conexión';

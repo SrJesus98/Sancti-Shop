@@ -98,7 +98,7 @@ function renderCart(data) {
     for (const item of data.items) {
         const total = item.subtotal;
         subtotal += total;
-        const productName = `Producto #${item.product_id}`;
+        const productName = item.product_name || `Producto #${item.product_id}`;
         html += `
             <div class="flex items-center bg-white rounded-xl shadow-sm border border-gray-200 p-4" data-item-id="${item.id}">
                 <div class="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -165,7 +165,7 @@ async function removeItem(itemId) {
 async function clearCart() {
     const token = localStorage.getItem('access_token');
     try {
-        const response = await fetch('/api/cart/items', {
+        const response = await fetch('/api/cart', {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
