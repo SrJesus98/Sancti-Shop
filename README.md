@@ -165,7 +165,6 @@ The server starts at **http://localhost:8000**. The database is automatically se
 
 | Role | Email | Password |
 |------|-------|----------|
-| **Admin** | `admin@test.com` | `Admin123!` |
 | **User** | `user@test.com` | `User1234!` |
 
 ### Running Tests
