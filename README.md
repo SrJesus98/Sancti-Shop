@@ -174,38 +174,6 @@ The server starts at **http://localhost:8000**. The database is automatically se
 pytest -x -q
 ```
 
----
-
-## Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-# Application
-APP_NAME=SanctiShop
-DEBUG=true
-ENVIRONMENT=development
-SECRET_KEY=change-me-in-production
-FRONTEND_URL=http://localhost:8000
-
-# Database
-DATABASE_URL=sqlite+aiosqlite:///./ecommerce.db
-
-# Security
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# CORS
-CORS_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
-
-# Payments
-PAYMENT_PROVIDER=mock
-PAYMENT_MODE=sandbox
-PAYMENT_WEBHOOK_SECRET=mock-webhook-secret
-```
-
----
-
 ## API Overview
 
 ### Public Endpoints
