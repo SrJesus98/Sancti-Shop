@@ -41,9 +41,12 @@ async function loadCheckout() {
         if (response.ok) {
             const data = await response.json();
             renderCheckoutItems(data);
+        } else {
+            document.getElementById('pay-btn').disabled = true;
         }
     } catch (err) {
         console.error(err);
+        document.getElementById('pay-btn').disabled = true;
     }
 }
 

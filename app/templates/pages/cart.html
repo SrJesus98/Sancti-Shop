@@ -88,10 +88,12 @@ function renderCart(data) {
         document.getElementById('cart-subtotal').textContent = '$0.00';
         document.getElementById('cart-total').textContent = '$0.00';
         document.getElementById('cart-empty-msg').classList.remove('hidden');
+        document.getElementById('checkout-btn').classList.add('hidden');
         return;
     }
 
     document.getElementById('cart-empty-msg').classList.add('hidden');
+    document.getElementById('checkout-btn').classList.remove('hidden');
     let html = '';
     let subtotal = 0;
 
