@@ -145,7 +145,10 @@ async function updateItem(itemId, newQty) {
             },
             body: JSON.stringify({ quantity: newQty })
         });
-        if (response.ok) loadCart();
+        if (response.ok) {
+            loadCart();
+            updateCartCount();
+        }
     } catch (err) {
         console.error(err);
     }
@@ -158,7 +161,10 @@ async function removeItem(itemId) {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (response.ok) loadCart();
+        if (response.ok) {
+            loadCart();
+            updateCartCount();
+        }
     } catch (err) {
         console.error(err);
     }
@@ -171,7 +177,10 @@ async function clearCart() {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (response.ok) loadCart();
+        if (response.ok) {
+            loadCart();
+            updateCartCount();
+        }
     } catch (err) {
         console.error(err);
     }
