@@ -2,18 +2,16 @@
 
 import logging
 
-from sqlmodel import Session
-
 from app.core.security import get_password_hash
 from app.db.models import Product, User
-from app.db.session import engine
+from app.db.session import SyncSessionLocal
 
 logger = logging.getLogger(__name__)
 
 
 def seed_database() -> None:
     """Seed users and products if the database is empty."""
-    with Session(engine) as session:
+    with SyncSessionLocal() as session:
         existing_users = session.query(User).count()
         if existing_users > 0:
             logger.info("Database already has %d users — skipping seed", existing_users)

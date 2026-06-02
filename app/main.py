@@ -13,7 +13,7 @@ from app.api.router import api_router
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.db.seed import seed_database
-from app.db.session import create_db_and_tables
+from app.db.session import create_db_and_tables_sync
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.views.router import router as views_router
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Lifespan events."""
     logger.info("Starting up...")
-    create_db_and_tables()
+    create_db_and_tables_sync()
     logger.info("Database tables created")
     seed_database()
     yield

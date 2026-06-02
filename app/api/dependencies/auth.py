@@ -1,14 +1,15 @@
-"""Reusable authentication dependencies."""
+"""Reusable authentication dependencies — ASYNC."""
 
 from collections.abc import Callable
 
 from fastapi import Cookie, Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlmodel import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token, validate_scopes
 from app.db.models import User
-from app.db.session import get_session
+from app.db.session import get_async_session
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -23,10 +24,10 @@ def _extract_token(
     return cookie_token
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
     cookie_token: str | None = Cookie(default=None, alias="access_token"),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> User:
     """Return authenticated user or raise 401.
 
@@ -46,7 +47,8 @@ def get_current_user(
             detail="Invalid token",
         )
 
-    user = session.query(User).filter(User.email == payload["sub"]).first()
+    result = await session.execute(select(User).where(User.email == payload["sub"]))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -59,7 +61,7 @@ def get_current_user(
 def require_scopes(required_scopes: list[str]) -> Callable:
     """Dependency factory validating required scopes by inclusion."""
 
-    def _scope_dependency(current_user: User = Depends(get_current_user)) -> User:
+    async def _scope_dependency(current_user: User = Depends(get_current_user)) -> User:
         if not validate_scopes(current_user.scopes, required_scopes):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

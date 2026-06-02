@@ -1,52 +1,63 @@
-"""Product service helpers."""
+"""Product service helpers — ASYNC version."""
 
 from fastapi import HTTPException, status
-from sqlmodel import Session
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Product
 from app.schemas.products import ProductCreateRequest, ProductResponse, ProductUpdateRequest
 
 
-def create_product(session: Session, payload: ProductCreateRequest) -> Product:
+async def create_product(session: AsyncSession, payload: ProductCreateRequest) -> Product:
     """Create a product."""
     product = Product(**payload.model_dump())
     session.add(product)
-    session.commit()
-    session.refresh(product)
+    await session.commit()
+    await session.refresh(product)
     return product
 
 
-def get_product_or_404(session: Session, product_id: int) -> Product:
+async def get_product_or_404(session: AsyncSession, product_id: int) -> Product:
     """Get product by id or raise 404."""
-    product = session.query(Product).filter(Product.id == product_id).first()
+    result = await session.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
     return product
 
 
-def update_product(session: Session, product_id: int, payload: ProductUpdateRequest) -> Product:
+async def update_product(session: AsyncSession, product_id: int, payload: ProductUpdateRequest) -> Product:
     """Update an existing product."""
-    product = get_product_or_404(session, product_id)
-    for field, value in payload.model_dump().items():
+    product = await get_product_or_404(session, product_id)
+    for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
     session.add(product)
-    session.commit()
-    session.refresh(product)
+    await session.commit()
+    await session.refresh(product)
     return product
 
 
-def delete_product(session: Session, product_id: int) -> None:
+async def delete_product(session: AsyncSession, product_id: int) -> None:
     """Delete an existing product."""
-    product = get_product_or_404(session, product_id)
-    session.delete(product)
-    session.commit()
+    product = await get_product_or_404(session, product_id)
+    await session.delete(product)
+    await session.commit()
 
 
-def get_products(session, page=1, size=10, category=None, sort=None, order="asc"):
-    query = session.query(Product).filter(Product.is_active == True, Product.stock > 0)
+async def get_products(
+    session: AsyncSession,
+    page: int = 1,
+    size: int = 10,
+    category: str | None = None,
+    sort: str | None = None,
+    order: str = "asc",
+) -> dict:
+    """List products with pagination, filter, and sorting (async)."""
+    # Build base query
+    stmt = select(Product).where(Product.is_active == True, Product.stock > 0)
 
     if category:
-        query = query.filter(Product.category == category)
+        stmt = stmt.where(Product.category == category)
 
     allowed_sort = {
         "name": Product.name,
@@ -58,12 +69,20 @@ def get_products(session, page=1, size=10, category=None, sort=None, order="asc"
 
     if sort and sort in allowed_sort:
         col = allowed_sort[sort]
-        query = query.order_by(col.desc() if order == "desc" else col.asc())
+        stmt = stmt.order_by(col.desc() if order == "desc" else col.asc())
     else:
-        query = query.order_by(Product.created_at.desc())
+        stmt = stmt.order_by(Product.created_at.desc())
 
-    total = query.count()
-    items = query.offset((page-1)*size).limit(size).all()
+    # Count total (async)
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    result = await session.execute(count_stmt)
+    total = result.scalar() or 0
+
+    # Paginate
+    stmt = stmt.offset((page - 1) * size).limit(size)
+    result = await session.execute(stmt)
+    items = result.scalars().all()
+
     total_pages = max(1, (total + size - 1) // size)
 
     return {
@@ -75,24 +94,31 @@ def get_products(session, page=1, size=10, category=None, sort=None, order="asc"
     }
 
 
-def list_public_products(
-    session: Session,
+async def list_public_products(
+    session: AsyncSession,
     page: int,
     size: int,
     category: str | None = None,
 ) -> tuple[list[Product], int]:
-    """List active/in-stock products with pagination and category filter."""
-    query = session.query(Product).filter(Product.is_active.is_(True), Product.stock > 0)
-    if category:
-        query = query.filter(Product.category == category)
-
-    total = query.count()
-    items = (
-        query.order_by(Product.created_at.desc())
-        .offset((page - 1) * size)
-        .limit(size)
-        .all()
+    """List active/in-stock products with pagination and category filter (async)."""
+    stmt = select(Product).where(
+        Product.is_active.is_(True),
+        Product.stock > 0,
     )
+    if category:
+        stmt = stmt.where(Product.category == category)
+
+    # Count
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    result = await session.execute(count_stmt)
+    total = result.scalar() or 0
+
+    # Paginate
+    stmt = stmt.order_by(Product.created_at.desc())
+    stmt = stmt.offset((page - 1) * size).limit(size)
+    result = await session.execute(stmt)
+    items = result.scalars().all()
+
     return items, total
 
 

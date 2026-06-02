@@ -64,7 +64,7 @@ def _context(user: User | None, extra: dict | None = None) -> dict:
 # ==================== ROUTES ====================
 
 @router.get("/")
-async def home(
+def home(
     request: Request,
     user: User | None = Depends(get_optional_user),
     session: Session = Depends(get_session),
@@ -100,7 +100,7 @@ async def home(
 
 
 @router.get("/login")
-async def login_page(
+def login_page(
     request: Request,
     user: User | None = Depends(get_optional_user),
 ):
@@ -115,7 +115,7 @@ async def login_page(
 
 
 @router.get("/register")
-async def register_page(
+def register_page(
     request: Request,
     user: User | None = Depends(get_optional_user),
 ):
@@ -130,7 +130,7 @@ async def register_page(
 
 
 @router.get("/cart")
-async def cart_page(
+def cart_page(
     request: Request,
     user: User | None = Depends(get_optional_user),
 ):
@@ -143,7 +143,7 @@ async def cart_page(
 
 
 @router.get("/product/{product_id}")
-async def product_detail(
+def product_detail(
     request: Request,
     product_id: int,
     user: User | None = Depends(get_optional_user),
@@ -162,7 +162,7 @@ async def product_detail(
 
 
 @router.get("/checkout")
-async def checkout_page(
+def checkout_page(
     request: Request,
     user: User = Depends(require_user),
 ):
@@ -175,7 +175,7 @@ async def checkout_page(
 
 
 @router.get("/profile")
-async def profile_page(
+def profile_page(
     request: Request,
     user: User = Depends(require_user),
 ):
@@ -188,7 +188,7 @@ async def profile_page(
 
 
 @router.get("/orders")
-async def orders_page(
+def orders_page(
     request: Request,
     user: User = Depends(require_user),
 ):
@@ -203,7 +203,7 @@ async def orders_page(
 # ==================== ADMIN ROUTES ====================
 
 @router.get("/admin/products")
-async def admin_products(
+def admin_products(
     request: Request,
     user: User = Depends(require_admin),
     session: Session = Depends(get_session),
@@ -218,7 +218,7 @@ async def admin_products(
 
 
 @router.get("/admin/orders")
-async def admin_orders(
+def admin_orders(
     request: Request,
     user: User = Depends(require_admin),
     session: Session = Depends(get_session),
@@ -232,7 +232,7 @@ async def admin_orders(
 
 
 @router.get("/admin/users")
-async def admin_users(
+def admin_users(
     request: Request,
     user: User = Depends(require_admin),
     session: Session = Depends(get_session),
