@@ -17,9 +17,11 @@ ADMIN_ALLOWED_TRANSITIONS = {
 
 def build_order_response(session: Session, order: Order) -> OrderResponse:
     items = session.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+    user = session.query(User).filter(User.id == order.user_id).first()
     return OrderResponse(
         id=order.id,
         user_id=order.user_id,
+        user_email=user.email if user else "",
         status=order.status,
         total=float(order.total),
         created_at=order.created_at,

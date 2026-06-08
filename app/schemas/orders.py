@@ -24,6 +24,7 @@ class OrderResponse(BaseModel):
 
     id: int
     user_id: int
+    user_email: str = ""
     status: str
     total: float
     created_at: datetime
