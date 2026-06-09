@@ -1,19 +1,19 @@
-"""Order endpoints for checkout and status transitions."""
+"""Order endpoints — ASYNC."""
 
-from fastapi import APIRouter, Depends, Request, status
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import get_current_user, require_scopes
-from app.core.limiter import limiter
-from app.db.models import Order, User
-from app.db.session import get_session
+from app.db.models import User
+from app.db.session import get_async_session
 from app.schemas.orders import AdminOrderStatusUpdateRequest, OrderResponse
 from app.services.orders import (
+    admin_get_all_orders,
     admin_update_order_status,
-    build_order_response,
-    checkout_from_cart,
-    list_orders_for_user,
-    mark_order_as_paid,
+    create_order_from_cart,
+    get_order_detail,
+    get_user_orders,
+    build_order_response
 )
 
 
@@ -21,52 +21,50 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 ADMIN_ORDER_SCOPES = ["admin:orders"]
 
 
-@router.post("/checkout", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")
-def checkout_endpoint(
-    request: Request,
-    session: Session = Depends(get_session),
+@router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+async def create_order(
+    session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user),
 ) -> OrderResponse:
-    """Checkout current cart into a new order."""
-    return checkout_from_cart(session, current_user)
+    """Create order from cart."""
+    order = await create_order_from_cart(session, current_user)
+    return build_order_response(order)
 
 
 @router.get("", response_model=list[OrderResponse])
-def list_orders_endpoint(
-    session: Session = Depends(get_session),
+async def list_user_orders(
+    session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user),
 ) -> list[OrderResponse]:
-    """Return authenticated user's order history."""
-    return list_orders_for_user(session, current_user)
+    """List current user's orders."""
+    return await get_user_orders(session, current_user.id)
 
 
-@router.patch("/{order_id}/pay", response_model=OrderResponse)
-def pay_order_endpoint(
+@router.get("/{order_id}", response_model=OrderResponse)
+async def get_order(
     order_id: int,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
     current_user: User = Depends(get_current_user),
 ) -> OrderResponse:
-    """User-side payment flow transition En proceso -> Pagada."""
-    return mark_order_as_paid(session, current_user, order_id)
+    """Get order detail."""
+    return await get_order_detail(session, order_id, current_user.id)
 
 
-@router.get("/admin", response_model=list[OrderResponse])
-def admin_list_orders(
-    session: Session = Depends(get_session),
+@router.get("/admin/all", response_model=list[OrderResponse])
+async def admin_list_orders(
+    session: AsyncSession = Depends(get_async_session),
     _: User = Depends(require_scopes(ADMIN_ORDER_SCOPES)),
 ) -> list[OrderResponse]:
-    """List all orders for admin."""
-    orders = session.query(Order).order_by(Order.created_at.desc()).all()
-    return [build_order_response(session, o) for o in orders]
+    """Admin: list all orders."""
+    return await admin_get_all_orders(session)
 
 
-@router.patch("/{order_id}/status", response_model=OrderResponse)
-def admin_update_status_endpoint(
+@router.patch("/admin/{order_id}/status", response_model=OrderResponse)
+async def admin_update_status(
     order_id: int,
     payload: AdminOrderStatusUpdateRequest,
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
     _: User = Depends(require_scopes(ADMIN_ORDER_SCOPES)),
 ) -> OrderResponse:
-    """Admin-only transitions Pagada->Lista->Entregada."""
-    return admin_update_order_status(session, order_id, payload.status)
+    """Admin: update order status."""
+    return await admin_update_order_status(session, order_id, payload)

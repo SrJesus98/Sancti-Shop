@@ -1,125 +1,144 @@
-"""Order and checkout service helpers."""
-
-from datetime import datetime
+"""Order service helpers — ASYNC."""
 
 from fastapi import HTTPException, status
-from sqlmodel import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.db.models import CartItem, Order, OrderItem, Product, User
-from app.schemas.orders import OrderItemResponse, OrderResponse
-from app.services.products import validate_available_for_purchase
-
-ADMIN_ALLOWED_TRANSITIONS = {
-    "Pagada": {"Lista"},
-    "Lista": {"Entregada"},
-}
+from app.schemas.orders import AdminOrderStatusUpdateRequest, OrderItemResponse, OrderResponse
 
 
-def build_order_response(session: Session, order: Order) -> OrderResponse:
-    items = session.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+async def _get_order_or_404(session: AsyncSession, order_id: int, user_id: int | None = None) -> Order:
+    stmt = select(Order).where(Order.id == order_id)
+    if user_id:
+        stmt = stmt.where(Order.user_id == user_id)
+    stmt = stmt.options(
+            selectinload(Order.items).selectinload(OrderItem.product),
+            selectinload(Order.user)
+        )        
+    result = await session.execute(stmt)
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Orden no encontrada")
+    return order
+
+
+def build_order_response(order: Order) -> OrderResponse:
+    """Build OrderResponse from Order model (sync, no DB calls)."""
+    items = [
+        OrderItemResponse(
+            id=oi.id,
+            product_id=oi.product_id,
+            product_name=oi.product.name if oi.product else "Producto eliminado",
+            quantity=oi.quantity,
+            price=oi.price,
+            subtotal=oi.quantity * oi.price,
+        )
+        for oi in (order.items or [])
+    ]
     return OrderResponse(
         id=order.id,
         user_id=order.user_id,
+        user_email=order.user.email if order.user else None,
         status=order.status,
-        total=float(order.total),
-        created_at=order.created_at,
-        updated_at=order.updated_at,
-        items=[
-            OrderItemResponse(
-                id=item.id,
-                product_id=item.product_id,
-                product_name=item.product.name if item.product else "",
-                quantity=item.quantity,
-                price=float(item.price),
-            )
-            for item in items
-        ],
+        total=order.total,
+        items=items,
+        created_at=order.created_at.isoformat() if order.created_at else None,
+        updated_at=order.updated_at.isoformat() if order.updated_at else None,
     )
 
 
-def checkout_from_cart(session: Session, user: User) -> OrderResponse:
-    """Create order from cart, discount stock, and clear cart."""
-    cart_items = session.query(CartItem).filter(CartItem.user_id == user.id).all()
+async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
+    """Create an order from the user's cart items."""
+    result = await session.execute(
+        select(CartItem).where(CartItem.user_id == user.id)
+        .options(selectinload(CartItem.product))
+    )
+    cart_items = result.scalars().all()
+
     if not cart_items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty")
 
+    order_items = []
     total = 0.0
-    products_by_id: dict[int, Product] = {}
-    for item in cart_items:
-        product = session.query(Product).filter(Product.id == item.product_id).first()
-        if not product:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-        validate_available_for_purchase(product)
-        if product.stock < item.quantity:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Insufficient stock for product {product.id}",
+    for ci in cart_items:
+        product = ci.product
+        if not product or not product.is_active:
+            continue
+        quantity = ci.quantity if ci.quantity <= product.stock else product.stock
+        price = float(product.price)
+        subtotal = price * quantity
+        total += subtotal
+        order_items.append(
+            OrderItem(
+                product_id=product.id,
+                quantity=quantity,
+                price=price,
             )
-        products_by_id[product.id] = product
-        total += float(product.price) * item.quantity
-
-    order = Order(user_id=user.id, status="En proceso", total=total)
-    session.add(order)
-    session.flush()
-
-    for item in cart_items:
-        product = products_by_id[item.product_id]
-        order_item = OrderItem(
-            order_id=order.id,
-            product_id=item.product_id,
-            quantity=item.quantity,
-            price=float(product.price),
         )
-        session.add(order_item)
-        product.stock -= item.quantity
-        session.add(product)
-        session.delete(item)
 
-    session.commit()
-    session.refresh(order)
-    return build_order_response(session, order)
-
-
-def list_orders_for_user(session: Session, user: User) -> list[OrderResponse]:
-    """Return orders for current user."""
-    orders = (
-        session.query(Order)
-        .filter(Order.user_id == user.id)
-        .order_by(Order.created_at.desc())
-        .all()
+    order = Order(
+        user_id=user.id,
+        status="En proceso",
+        total=total,
+        items=order_items,
     )
-    return [build_order_response(session, order) for order in orders]
-
-
-def mark_order_as_paid(session: Session, user: User, order_id: int) -> OrderResponse:
-    """Transition order from En proceso to Pagada for owner."""
-    order = session.query(Order).filter(Order.id == order_id, Order.user_id == user.id).first()
-    if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-    if order.status != "En proceso":
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid status transition")
-
-    order.status = "Pagada"
-    order.updated_at = datetime.utcnow()
     session.add(order)
-    session.commit()
-    session.refresh(order)
-    return build_order_response(session, order)
+
+    # Clear cart
+    for ci in cart_items:
+        await session.delete(ci)
+
+    await session.commit()
+    await session.refresh(order,["items","user"])
+    return order
 
 
-def admin_update_order_status(session: Session, order_id: int, new_status: str) -> OrderResponse:
-    """Admin-only status transitions: Pagada->Lista->Entregada."""
-    order = session.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+async def get_user_orders(session: AsyncSession, user_id: int) -> list[OrderResponse]:
+    """Get all orders for a user."""
+    result = await session.execute(
+        select(Order).where(Order.user_id == user_id)
+        .options(
+            selectinload(Order.items).selectinload(OrderItem.product),
+            selectinload(Order.user)
+        )
+        .order_by(Order.created_at.desc())
+    )
+    orders = result.scalars().all()
+    return [build_order_response(o) for o in orders]
 
-    allowed_next = ADMIN_ALLOWED_TRANSITIONS.get(order.status, set())
-    if new_status not in allowed_next:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Invalid status transition")
 
-    order.status = new_status
-    order.updated_at = datetime.utcnow()
+async def get_order_detail(session: AsyncSession, order_id: int, user_id: int) -> OrderResponse:
+    """Get single order detail for a user."""
+    order = await _get_order_or_404(session, order_id, user_id)
+    return build_order_response(order)
+
+
+async def admin_get_all_orders(session: AsyncSession) -> list[OrderResponse]:
+    """Admin: get all orders."""
+    result = await session.execute(
+        select(Order)
+        .options(
+            selectinload(Order.items).selectinload(OrderItem.product),
+            selectinload(Order.user)
+        )
+        .order_by(Order.created_at.desc())
+    )
+    orders = result.scalars().all()
+    response = []
+    for o in orders:
+        response.append(build_order_response(o))
+    return response
+
+
+async def admin_update_order_status(
+    session: AsyncSession, order_id: int, payload: AdminOrderStatusUpdateRequest
+) -> OrderResponse:
+    """Admin: update order status."""
+    order = await _get_order_or_404(session, order_id)
+    order.status = payload.status
+    order.updated_at = payload.updated_at
     session.add(order)
-    session.commit()
-    session.refresh(order)
-    return build_order_response(session, order)
+    await session.commit()
+    return build_order_response(order)
