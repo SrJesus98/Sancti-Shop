@@ -7,6 +7,7 @@ from sqlmodel import Session
 
 from app.core.security import decode_token
 from app.db.models import Order, Product, User
+from app.schemas.products import ProductResponse
 from app.db.session import get_session
 
 templates = Jinja2Templates(directory="app/templates")

@@ -37,13 +37,9 @@ def update_user_role(
         raise HTTPException(404, "User not found")
     user.rol = payload.rol
     if payload.rol == "admin":
-        for s in ["admin:read", "admin:products", "admin:orders", "admin:users", "user:read"]:
-            if s not in user.scopes:
-                user.scopes.append(s)
+        user.scopes = ["admin:read", "admin:products", "admin:orders", "admin:users", "user:read"]
     else:
-        user.scopes = [s for s in user.scopes if not s.startswith("admin:")]
-        if "user:read" not in user.scopes:
-            user.scopes.append("user:read")
+        user.scopes = ["user:read"]
     session.add(user)
     session.commit()
     session.refresh(user)
