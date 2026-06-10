@@ -1,14 +1,14 @@
-"""View routes that render HTML pages with Jinja2."""
+"""View routes that render HTML pages with Jinja2 — ASYNC version."""
 
 from fastapi import APIRouter, Cookie, Depends, Request, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token
-from app.db.models import Order, Product, User
-from app.schemas.products import ProductResponse
-from app.db.session import get_session
+from app.db.models import CartItem, Order, Product, User
+from app.db.session import get_async_session
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/views", tags=["views"])
 
 # ==================== USER DEPENDENCY ====================
 
-def get_optional_user(
+async def get_optional_user(
     cookie_token: str | None = Cookie(default=None, alias="access_token"),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ) -> User | None:
     """Return authenticated user or None (no error raised)."""
     if not cookie_token:
@@ -27,11 +27,12 @@ def get_optional_user(
     payload = decode_token(cookie_token)
     if not payload or "sub" not in payload:
         return None
-    user = session.query(User).filter(User.email == payload["sub"]).first()
+    result = await session.execute(select(User).where(User.email == payload["sub"]))
+    user = result.scalar_one_or_none()
     return user
 
 
-def require_user(
+async def require_user(
     user: User | None = Depends(get_optional_user),
 ) -> User:
     """Require authenticated user, redirect to login if not."""
@@ -40,7 +41,7 @@ def require_user(
     return user
 
 
-def require_admin(
+async def require_admin(
     user: User = Depends(require_user),
 ) -> User:
     """Require admin user."""
@@ -51,12 +52,17 @@ def require_admin(
 
 # ==================== CONTEXT HELPER ====================
 
-def _context(user: User | None, extra: dict | None = None) -> dict:
-    """Build base template context with user info."""
+async def _context(user: User | None, session: AsyncSession, extra: dict | None = None) -> dict:
+    """Build base template context with user info and real cart count."""
     ctx = {
         "user": user,
-        "cart_count": 0,  # Se calcula más adelante si hay carrito
+        "cart_count": 0,
     }
+    if user:
+        result = await session.execute(
+            select(func.count()).select_from(CartItem).where(CartItem.user_id == user.id)
+        )
+        ctx["cart_count"] = result.scalar() or 0
     if extra:
         ctx.update(extra)
     return ctx
@@ -65,15 +71,21 @@ def _context(user: User | None, extra: dict | None = None) -> dict:
 # ==================== ROUTES ====================
 
 @router.get("/")
-def home(
+async def home(
     request: Request,
     user: User | None = Depends(get_optional_user),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Home page — public product catalog."""
-    products = session.query(Product).filter(Product.is_active == True).all()
-    categories = session.query(Product.category).filter(Product.is_active == True).distinct().all()
-    categories = [c[0] for c in categories if c[0]]
+    result = await session.execute(
+        select(Product).where(Product.is_active == True)
+    )
+    products = result.scalars().all()
+
+    cat_result = await session.execute(
+        select(Product.category).where(Product.is_active == True).distinct()
+    )
+    categories = [row[0] for row in cat_result if row[0]]
 
     # Serializar productos a dict para JS
     products_json = [
@@ -92,7 +104,7 @@ def home(
     return templates.TemplateResponse(
         request,
         "pages/index.html",
-        _context(user, {
+        await _context(user, session, {
             "products": products,
             "products_json": products_json,
             "categories": categories,
@@ -101,9 +113,10 @@ def home(
 
 
 @router.get("/login")
-def login_page(
+async def login_page(
     request: Request,
     user: User | None = Depends(get_optional_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Login page."""
     if user:
@@ -111,14 +124,15 @@ def login_page(
     return templates.TemplateResponse(
         request,
         "pages/login.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 @router.get("/register")
-def register_page(
+async def register_page(
     request: Request,
     user: User | None = Depends(get_optional_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Register page."""
     if user:
@@ -126,107 +140,117 @@ def register_page(
     return templates.TemplateResponse(
         request,
         "pages/register.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 @router.get("/cart")
-def cart_page(
+async def cart_page(
     request: Request,
     user: User | None = Depends(get_optional_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Cart page."""
     return templates.TemplateResponse(
         request,
         "pages/cart.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 @router.get("/product/{product_id}")
-def product_detail(
+async def product_detail(
     request: Request,
     product_id: int,
     user: User | None = Depends(get_optional_user),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Product detail page."""
-    product = session.query(Product).filter(Product.id == product_id, Product.is_active == True).first()
+    result = await session.execute(
+        select(Product).where(Product.id == product_id, Product.is_active == True)
+    )
+    product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
     return templates.TemplateResponse(
         request,
         "pages/product_detail.html",
-        _context(user, {"product": product})
+        await _context(user, session, {"product": product})
     )
 
 
 @router.get("/checkout")
-def checkout_page(
+async def checkout_page(
     request: Request,
     user: User = Depends(require_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Checkout page (requires login)."""
     return templates.TemplateResponse(
         request,
         "pages/checkout.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 @router.get("/profile")
-def profile_page(
+async def profile_page(
     request: Request,
     user: User = Depends(require_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """User profile page."""
     return templates.TemplateResponse(
         request,
         "pages/profile.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 @router.get("/orders")
-def orders_page(
+async def orders_page(
     request: Request,
     user: User = Depends(require_user),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """User orders history page."""
     return templates.TemplateResponse(
         request,
         "pages/orders.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 # ==================== ADMIN ROUTES ====================
 
 @router.get("/admin/products")
-def admin_products(
+async def admin_products(
     request: Request,
     user: User = Depends(require_admin),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Admin product management page."""
-    products = session.query(Product).all()
+    result = await session.execute(select(Product))
+    products = result.scalars().all()
     return templates.TemplateResponse(
         request,
         "pages/admin/products.html",
-        _context(user, {"products": products})
+        await _context(user, session, {"products": products})
     )
 
 
 @router.get("/admin/products/new")
-def admin_product_new(
+async def admin_product_new(
     request: Request,
     user: User = Depends(require_admin),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Admin product creation form."""
-    categories = session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
-    categories = [c[0] for c in categories if c[0]]
+    cat_result = await session.execute(
+        select(Product.category).where(Product.category.isnot(None)).distinct()
+    )
+    categories = [row[0] for row in cat_result if row[0]]
 
     return templates.TemplateResponse(
         request,
@@ -242,19 +266,22 @@ def admin_product_new(
 
 
 @router.get("/admin/products/{product_id}")
-def admin_product_edit(
+async def admin_product_edit(
     product_id: int,
     request: Request,
     user: User = Depends(require_admin),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Admin product edit form."""
-    product = session.get(Product, product_id)
+    result = await session.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    categories = session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
-    categories = [c[0] for c in categories if c[0]]
+    cat_result = await session.execute(
+        select(Product.category).where(Product.category.isnot(None)).distinct()
+    )
+    categories = [row[0] for row in cat_result if row[0]]
 
     return templates.TemplateResponse(
         request,
@@ -270,28 +297,28 @@ def admin_product_edit(
 
 
 @router.get("/admin/orders")
-def admin_orders(
+async def admin_orders(
     request: Request,
     user: User = Depends(require_admin),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Admin order management page."""
     return templates.TemplateResponse(
         request,
         "pages/admin/orders.html",
-        _context(user)
+        await _context(user, session)
     )
 
 
 @router.get("/admin/users")
-def admin_users(
+async def admin_users(
     request: Request,
     user: User = Depends(require_admin),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_async_session),
 ):
     """Admin user management page."""
     return templates.TemplateResponse(
         request,
         "pages/admin/users.html",
-        _context(user)
+        await _context(user, session)
     )
