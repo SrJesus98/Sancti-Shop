@@ -218,6 +218,57 @@ def admin_products(
     )
 
 
+@router.get("/admin/products/new")
+def admin_product_new(
+    request: Request,
+    user: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+):
+    """Admin product creation form."""
+    categories = session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
+    categories = [c[0] for c in categories if c[0]]
+
+    return templates.TemplateResponse(
+        request,
+        "pages/admin/product_form.html",
+        {
+            "request": request,
+            "user": user,
+            "product": None,
+            "categories": categories,
+            "is_edit": False,
+        }
+    )
+
+
+@router.get("/admin/products/{product_id}")
+def admin_product_edit(
+    product_id: int,
+    request: Request,
+    user: User = Depends(require_admin),
+    session: Session = Depends(get_session),
+):
+    """Admin product edit form."""
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    categories = session.query(Product.category).filter(Product.category.isnot(None)).distinct().all()
+    categories = [c[0] for c in categories if c[0]]
+
+    return templates.TemplateResponse(
+        request,
+        "pages/admin/product_form.html",
+        {
+            "request": request,
+            "user": user,
+            "product": product,
+            "categories": categories,
+            "is_edit": True,
+        }
+    )
+
+
 @router.get("/admin/orders")
 def admin_orders(
     request: Request,
