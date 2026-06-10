@@ -221,38 +221,140 @@ function initSearch(products) {
     });
 }
 
-// ==================== FILTERS ====================
+// ==================== FILTERS + SORT ====================
 function initFilters() {
     const chips = document.querySelectorAll('.filter-chip');
-    const products = document.querySelectorAll('.product-card-modern');
+    const grid = document.getElementById('product-grid');
+    const sortSelect = document.getElementById('sort-select');
+    const productCount = document.getElementById('product-count');
+    const activeCategory = document.getElementById('active-category');
+    const activeSort = document.getElementById('active-sort');
+    const activeFilters = document.getElementById('active-filters');
 
+    let currentFilter = 'all';
+    let currentSort = sortSelect?.value || 'newest';
+
+    function getVisibleProducts() {
+        const all = Array.from(grid.querySelectorAll('.product-card-modern'));
+        // First filter by category
+        let filtered = all;
+        if (currentFilter !== 'all') {
+            filtered = all.filter(p => p.dataset.category === currentFilter);
+        }
+        return filtered;
+    }
+
+    function sortProducts(productsArray) {
+        const sorted = [...productsArray];
+        switch (currentSort) {
+            case 'price-asc':
+                sorted.sort((a, b) => parseFloat(a.dataset.price) - parseFloat(b.dataset.price));
+                break;
+            case 'price-desc':
+                sorted.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
+                break;
+            case 'name-asc':
+                sorted.sort((a, b) => (a.dataset.name || '').localeCompare(b.dataset.name || ''));
+                break;
+            case 'name-desc':
+                sorted.sort((a, b) => (b.dataset.name || '').localeCompare(a.dataset.name || ''));
+                break;
+            case 'newest':
+            default:
+                // Ya están en orden del servidor (más nuevos primero)
+                break;
+        }
+        return sorted;
+    }
+
+    function applyFiltersAndSort() {
+        const all = Array.from(grid.querySelectorAll('.product-card-modern'));
+
+        // Hide all first
+        all.forEach(p => p.style.display = 'none');
+
+        // Get visible (by category)
+        let visible = getVisibleProducts();
+
+        // Sort visible
+        visible = sortProducts(visible);
+
+        // Show and reorder in DOM
+        visible.forEach(p => p.style.display = '');
+
+        // Reorder DOM to match sort
+        visible.forEach(p => grid.appendChild(p));
+
+        // Update product count
+        const total = all.length;
+        const showing = visible.length;
+        if (productCount) {
+            productCount.textContent = `${showing} de ${total} productos`;
+        }
+
+        // Update active filters display
+        updateActiveFilters();
+    }
+
+    function updateActiveFilters() {
+        if (!activeFilters || !activeCategory || !activeSort) return;
+
+        let hasFilters = false;
+
+        if (currentFilter !== 'all') {
+            activeCategory.textContent = `Categoría: ${currentFilter}`;
+            activeCategory.classList.remove('hidden');
+            hasFilters = true;
+        } else {
+            activeCategory.classList.add('hidden');
+        }
+
+        if (currentSort !== 'newest') {
+            const labels = {
+                'price-asc': 'Precio ↑',
+                'price-desc': 'Precio ↓',
+                'name-asc': 'A-Z',
+                'name-desc': 'Z-A',
+            };
+            activeSort.textContent = `Orden: ${labels[currentSort] || currentSort}`;
+            activeSort.classList.remove('hidden');
+            hasFilters = true;
+        } else {
+            activeSort.classList.add('hidden');
+        }
+
+        activeFilters.classList.toggle('hidden', !hasFilters);
+    }
+
+    // Category chips
     chips.forEach(chip => {
         chip.addEventListener('click', function() {
-            const isActive = this.classList.contains('active');
-
-            // "Todos" desactiva todo
             if (this.dataset.filter === 'all') {
                 chips.forEach(c => c.classList.remove('active'));
                 this.classList.add('active');
-                products.forEach(p => p.style.display = '');
-                return;
+                currentFilter = 'all';
+            } else {
+                chips.forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
             }
-
-            // Toggle active
-            chips.forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-
-            const filter = this.dataset.filter;
-            products.forEach(p => {
-                const category = p.dataset.category;
-                if (category === filter) {
-                    p.style.display = '';
-                } else {
-                    p.style.display = 'none';
-                }
-            });
+            applyFiltersAndSort();
         });
     });
+
+    // Sort dropdown
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            currentSort = this.value;
+            applyFiltersAndSort();
+        });
+    }
+
+    // Initial sort
+    if (sortSelect && sortSelect.value !== 'newest') {
+        currentSort = sortSelect.value;
+        applyFiltersAndSort();
+    }
 }
 
 // ==================== RIPPLE EFFECT ====================
