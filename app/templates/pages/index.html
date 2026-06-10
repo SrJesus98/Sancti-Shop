@@ -86,10 +86,14 @@
             <div id="search-results" class="search-results"></div>
         </div>
 
-        {# Mobile filter toggle #}
-        <button class="md:hidden px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark-hover-bg transition" onclick="document.getElementById('filter-drawer').classList.toggle('open')">
-            Filtrar ▼
-        </button>
+        {# Sort dropdown #}
+        <select id="sort-select" class="px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 outline-none transition cursor-pointer">
+            <option value="newest">Más nuevos</option>
+            <option value="price-asc">Precio: menor a mayor</option>
+            <option value="price-desc">Precio: mayor a menor</option>
+            <option value="name-asc">Nombre: A-Z</option>
+            <option value="name-desc">Nombre: Z-A</option>
+        </select>
     </div>
 
     {# Filter chips #}
@@ -98,6 +102,13 @@
         {% for cat in categories %}
         <button class="filter-chip" data-filter="{{ cat }}">{{ cat }}</button>
         {% endfor %}
+    </div>
+
+    {# Active filters bar #}
+    <div id="active-filters" class="flex flex-wrap items-center gap-2 mt-3 text-sm hidden">
+        <span class="text-gray-500 dark:text-gray-400">Filtros:</span>
+        <span id="active-category" class="px-2.5 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium text-xs hidden"></span>
+        <span id="active-sort" class="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-medium text-xs hidden"></span>
     </div>
 </section>
 
@@ -112,7 +123,7 @@
     <div id="product-grid" class="product-grid">
         {# Load real products #}
         {% for product in products %}
-        <div class="product-card-modern animate-on-scroll delay-{{ (loop.index % 5) + 1 }}" data-category="{{ product.category or 'General' }}">
+        <div class="product-card-modern animate-on-scroll delay-{{ (loop.index % 5) + 1 }}" data-category="{{ product.category or 'General' }}" data-price="{{ product.price }}" data-name="{{ product.name }}">
             {# Image #}
             <a href="/views/product/{{ product.id }}">
                 <div class="card-image">
