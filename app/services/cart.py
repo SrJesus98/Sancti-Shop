@@ -104,6 +104,22 @@ async def update_cart_item_quantity(
     await session.commit()
     return await _build_cart_response(session, user)
 
+async def remove_cart_item(session: AsyncSession, user:User, cart_item_id:int)->None:
+    """Serching for cart item to delete"""
+    result = await session.execute(
+        select(CartItem).where(
+            CartItem.id == cart_item_id,
+            CartItem.user_id == user.id,
+        )
+    )
+    item = result.scalar_one_or_none()
+    ###Check that exist##
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
+    ###Deliting from database###
+    await session.delete(item)
+    await session.commit()
+    
 
 async def clear_cart(session: AsyncSession, user: User) -> CartResponse:
     """Clear all cart items for user."""

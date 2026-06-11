@@ -7,7 +7,7 @@ from app.api.dependencies.auth import get_current_user
 from app.db.models import User
 from app.db.session import get_async_session
 from app.schemas.cart import CartAddItemRequest, CartResponse, CartUpdateItemRequest
-from app.services.cart import add_item_to_cart, clear_cart, get_cart, update_cart_item_quantity
+from app.services.cart import add_item_to_cart, clear_cart, get_cart, update_cart_item_quantity,remove_cart_item
 
 
 router = APIRouter(prefix="/cart", tags=["cart"])
@@ -50,3 +50,12 @@ async def clear_cart_endpoint(
 ) -> CartResponse:
     """Clear current user's cart."""
     return await clear_cart(session, current_user)
+
+@router.delete("/items/{cart_item_id}", response_model=CartResponse)
+async def delete_cart_item(
+    cart_item_id: int,
+    session:AsyncSession=Depends(get_async_session),
+    user:User=Depends(get_current_user)):
+
+    await remove_cart_item(session,user,cart_item_id)
+    return await get_cart(session,user)
