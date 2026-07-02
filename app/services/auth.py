@@ -1,15 +1,17 @@
-"""Authentication service helpers."""
+"""Authentication service helpers — ASYNC."""
 
 from fastapi import HTTPException, status
-from sqlmodel import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.db.models import User
 
 
-def register_user(session: Session, email: str, password: str) -> User:
+async def register_user(session: AsyncSession, email: str, password: str) -> User:
     """Create a new user with bcrypt hashed password."""
-    existing_user = session.query(User).filter(User.email == email).first()
+    result = await session.execute(select(User).where(User.email == email))
+    existing_user = result.scalar_one_or_none()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -22,14 +24,15 @@ def register_user(session: Session, email: str, password: str) -> User:
         scopes=["user:read"],
     )
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
     return user
 
 
-def login_user(session: Session, email: str, password: str) -> str:
+async def login_user(session: AsyncSession, email: str, password: str) -> str:
     """Validate credentials and return JWT token."""
-    user = session.query(User).filter(User.email == email).first()
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
