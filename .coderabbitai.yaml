@@ -1,0 +1,10 @@
+# CodeRabbit configuration
+language: es-ES           # ← revisiones en español
+reviews:
+  review_status: true      # ← muestra estado en los checks
+  path_filters:
+    - "!**/*.lock"         # ← ignorar archivos lock
+    - "!**/*.pyc"          # ← ignorar compilados
+  base_branches:
+    - develop              # ← revisar PRs contra develop
+    - main                 # ← y contra main también
