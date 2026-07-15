@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import decode_token
 from app.db.models import CartItem, Order, Product, User
 from app.db.session import get_async_session
+from app.services.dashboard import get_dashboard_metrics
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -321,4 +322,18 @@ async def admin_users(
         request,
         "pages/admin/users.html",
         await _context(user, session)
+    )
+
+@router.get("/admin/dashboard")
+async def admin_dashboard_page(
+    request: Request,
+    user: User = Depends(require_admin),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """Admin dashboard page with metrics."""
+    metrics = await get_dashboard_metrics(session)
+    return templates.TemplateResponse(
+        request,
+        "pages/admin/dashboard.html",
+        await _context(user, session, {"metrics": metrics})
     )

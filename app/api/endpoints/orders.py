@@ -40,6 +40,15 @@ async def list_user_orders(
     return await get_user_orders(session, current_user.id)
 
 
+@router.get("/admin", response_model=list[OrderResponse])
+async def admin_list_orders(
+    session: AsyncSession = Depends(get_async_session),
+    _: User = Depends(require_scopes(ADMIN_ORDER_SCOPES)),
+) -> list[OrderResponse]:
+    """Admin: list all orders."""
+    return await admin_get_all_orders(session)
+
+
 @router.get("/{order_id}", response_model=OrderResponse)
 async def get_order(
     order_id: int,
@@ -50,13 +59,7 @@ async def get_order(
     return await get_order_detail(session, order_id, current_user.id)
 
 
-@router.get("/admin/all", response_model=list[OrderResponse])
-async def admin_list_orders(
-    session: AsyncSession = Depends(get_async_session),
-    _: User = Depends(require_scopes(ADMIN_ORDER_SCOPES)),
-) -> list[OrderResponse]:
-    """Admin: list all orders."""
-    return await admin_get_all_orders(session)
+
 
 
 @router.patch("/admin/{order_id}/status", response_model=OrderResponse)
