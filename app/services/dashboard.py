@@ -21,10 +21,10 @@ async def get_dashboard_metrics(session: AsyncSession) -> dict:
     ingresos_totales = sum(result.scalars().all())
 
     return {
-        "total_usuarios": cant_usuarios,  
-        "total_productos": cant_productos,
-        "total_ordenes": cant_ordenes,
-        "oredenes_x_estado": cant_oredenes_x_estado,
-        "ingresos_totales": ingresos_totales
+        "total_users": cant_usuarios,  
+        "total_products": cant_productos,
+        "total_orders": cant_ordenes,
+        "orders_by_status": cant_oredenes_x_estado,
+        "total_revenue": ingresos_totales
     }
 
