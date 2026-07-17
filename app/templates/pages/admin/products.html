@@ -65,60 +65,77 @@
 <div id="productModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeModal()"></div>
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
-            <div class="px-6 py-5 border-b border-gray-200">
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            <div class="px-5 py-4 border-b border-gray-200">
                 <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Nuevo producto</h3>
             </div>
-            <form id="productForm" onsubmit="submitProductForm(event)" class="p-6 space-y-4">
+            <form id="productForm" onsubmit="submitProductForm(event)" class="p-4 space-y-3">
                 <input type="hidden" id="productId" value="">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Nombre *</label>
                     <input type="text" id="inputName" required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                    <textarea id="inputDescription" rows="3"
-                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"></textarea>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Descripción</label>
+                    <textarea id="inputDescription" rows="2"
+                              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Precio *</label>
                         <input type="number" id="inputPrice" step="0.01" min="0.01" required
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Stock *</label>
                         <input type="number" id="inputStock" min="0" required
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
+                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Categoría</label>
                     <select id="inputCategory"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition bg-white">
                         <option value="">Sin categoría</option>
                     </select>
                 </div>
+                <!-- Imagen del producto -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
-                    <input type="text" id="inputImageUrl" oninput="previewImage(this.value)"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition">
-                    <div id="imagePreviewContainer" class="mt-2 hidden">
-                        <img id="imagePreview" class="w-24 h-24 object-cover rounded-lg border border-gray-200">
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Imagen del producto</label>
+                    <!-- Imagen actual (solo en editar) -->
+                    <div id="currentImageContainer" class="mb-1.5 hidden">
+                        <p class="text-xs text-gray-400 mb-0.5">Imagen actual:</p>
+                        <img id="currentImagePreview" class="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm">
                     </div>
+                    <!-- Input file + botón subir -->
+                    <div class="flex items-center gap-2">
+                        <input type="file" id="image-file" accept="image/jpeg,image/png,image/gif,image/webp"
+                               class="block w-full text-xs text-gray-500 border border-gray-300 rounded-md py-1 px-2 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 cursor-pointer">
+                        <button type="button" id="upload-btn"
+                                class="px-3 py-1 bg-primary-600 text-white rounded-md text-xs hover:bg-primary-700 whitespace-nowrap shadow-sm">
+                            Subir
+                        </button>
+                    </div>
+                    <p id="upload-status" class="text-xs mt-0.5"></p>
+                    <!-- Preview de la imagen subida (reemplaza a la actual) -->
+                    <div id="imagePreviewContainer" class="mt-1 hidden">
+                        <img id="imagePreview" class="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm">
+                    </div>
+                    <!-- URL oculta (se llena automáticamente al subir) -->
+                    <input type="hidden" id="inputImageUrl" value="">
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" id="inputActive" checked
                            class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500">
-                    <label for="inputActive" class="text-sm font-medium text-gray-700">Activo</label>
+                    <label for="inputActive" class="text-xs font-medium text-gray-700">Activo</label>
                 </div>
-                <div id="modalError" class="hidden text-red-500 text-sm font-medium"></div>
-                <div class="flex justify-end gap-3 pt-2">
+                <div id="modalError" class="hidden text-red-500 text-xs font-medium"></div>
+                <div class="flex justify-end gap-2 pt-1 border-t border-gray-100">
                     <button type="button" onclick="closeModal()"
-                            class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Cancelar</button>
+                            class="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">Cancelar</button>
                     <button type="submit" id="modalSubmitBtn"
-                            class="px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition shadow-sm">Guardar</button>
+                            class="px-5 py-2 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition shadow-sm">Guardar</button>
                 </div>
             </form>
         </div>
@@ -127,6 +144,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="/static/js/upload.js"></script>
 <script>
 const token = localStorage.getItem('access_token');
 let categories = [];
@@ -154,9 +172,12 @@ async function loadCategories() {
 function previewImage(url) {
     const container = document.getElementById('imagePreviewContainer');
     const img = document.getElementById('imagePreview');
+    const currentContainer = document.getElementById('currentImageContainer');
     if (url) {
         img.src = url;
         container.classList.remove('hidden');
+        // Ocultar la imagen actual si existe (cuando se sube una nueva en editar)
+        if (currentContainer) currentContainer.classList.add('hidden');
     } else {
         container.classList.add('hidden');
     }
@@ -169,12 +190,16 @@ function openCreateModal() {
     document.getElementById('inputActive').checked = true;
     document.getElementById('inputCategory').value = '';
     document.getElementById('imagePreviewContainer').classList.add('hidden');
+    document.getElementById('currentImageContainer').classList.add('hidden');
+    document.getElementById('upload-status').textContent = '';
+    document.getElementById('upload-btn').textContent = 'Subir';
     document.getElementById('modalError').classList.add('hidden');
     openModal();
 }
 
 async function openEditModal(productId) {
     document.getElementById('modalError').classList.add('hidden');
+    document.getElementById('upload-status').textContent = '';
     try {
         const res = await fetch(`/api/products/${productId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -189,7 +214,17 @@ async function openEditModal(productId) {
         document.getElementById('inputStock').value = p.stock;
         document.getElementById('inputCategory').value = p.category || '';
         document.getElementById('inputImageUrl').value = p.image_url || '';
-        if (p.image_url) previewImage(p.image_url);
+        if (p.image_url) {
+            // Mostrar SOLO la imagen actual (el preview se muestra cuando se sube una nueva)
+            document.getElementById('currentImagePreview').src = p.image_url;
+            document.getElementById('currentImageContainer').classList.remove('hidden');
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('upload-btn').textContent = 'Cambiar';
+        } else {
+            document.getElementById('currentImageContainer').classList.add('hidden');
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('upload-btn').textContent = 'Subir';
+        }
         document.getElementById('inputActive').checked = p.is_active;
         openModal();
     } catch (err) {

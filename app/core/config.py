@@ -23,10 +23,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # CORS
-    CORS_ORIGINS: str = "http://127.0.0.1:8000,http://localhost:8000"
+    CORS_ORIGINS: str = "*"
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:8000"
+
+    # File upload
+    UPLOAD_DIR: str = "app/static/images/products"
+    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5MB
+    ALLOWED_EXTENSIONS: str = "jpg,jpeg,png,gif,webp"
 
     # Environment
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"

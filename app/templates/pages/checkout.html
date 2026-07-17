@@ -84,7 +84,7 @@ document.getElementById('pay-btn').addEventListener('click', async function() {
     const resultEl = document.getElementById('pay-result');
 
     try {
-        const checkoutRes = await fetch('/api/orders/checkout', {
+        const checkoutRes = await fetch('/api/orders', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });

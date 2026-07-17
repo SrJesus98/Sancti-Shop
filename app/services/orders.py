@@ -91,7 +91,12 @@ async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
         await session.delete(ci)
 
     await session.commit()
-    await session.refresh(order,["items","user"])
+    stmt = select(Order).where(Order.id == order.id).options(
+    selectinload(Order.items).selectinload(OrderItem.product),
+    selectinload(Order.user)
+    )
+    result = await session.execute(stmt)
+    order = result.scalar_one()
     return order
 
 
