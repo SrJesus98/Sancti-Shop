@@ -5,7 +5,7 @@ from sqlmodel import SQLModel, Session
 
 from app.core.limiter import reset_rate_limiter
 from app.db.models import Order, PaymentWebhookEvent, Product, User
-from app.db.session import engine
+from app.db.session import sync_engine as engine
 from app.main import app
 
 
@@ -45,7 +45,7 @@ def _seed_product() -> Product:
 def _create_order(client: TestClient, user_headers: dict[str, str]) -> int:
     p = _seed_product()
     client.post("/api/cart/items", headers=user_headers, json={"product_id": p.id, "quantity": 1})
-    checkout = client.post("/api/orders/checkout", headers=user_headers)
+    checkout = client.post("/api/orders", headers=user_headers)
     assert checkout.status_code == 201
     return checkout.json()["id"]
 

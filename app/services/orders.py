@@ -1,5 +1,7 @@
 """Order service helpers — ASYNC."""
 
+from datetime import datetime
+
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,6 +69,7 @@ async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
         if not product or not product.is_active:
             continue
         quantity = ci.quantity if ci.quantity <= product.stock else product.stock
+        product.stock -= quantity
         price = float(product.price)
         subtotal = price * quantity
         total += subtotal
@@ -137,13 +140,26 @@ async def admin_get_all_orders(session: AsyncSession) -> list[OrderResponse]:
     return response
 
 
+VALID_TRANSITIONS: dict[str, set[str]] = {
+    "Pagada": {"Lista"},
+    "Lista": {"Entregada"},
+}
+
+
 async def admin_update_order_status(
     session: AsyncSession, order_id: int, payload: AdminOrderStatusUpdateRequest
 ) -> OrderResponse:
     """Admin: update order status."""
     order = await _get_order_or_404(session, order_id)
+    allowed = VALID_TRANSITIONS.get(order.status, set())
+    if payload.status not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Invalid transition from {order.status} to {payload.status}",
+        )
     order.status = payload.status
-    order.updated_at = payload.updated_at
+    order.updated_at = datetime.utcnow()
     session.add(order)
     await session.commit()
     return build_order_response(order)
+

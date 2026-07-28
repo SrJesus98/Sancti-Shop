@@ -13,7 +13,7 @@ from app.services.orders import (
     create_order_from_cart,
     get_order_detail,
     get_user_orders,
-    build_order_response
+    build_order_response,
 )
 
 
@@ -64,6 +64,16 @@ async def get_order(
 
 @router.patch("/admin/{order_id}/status", response_model=OrderResponse)
 async def admin_update_status(
+    order_id: int,
+    payload: AdminOrderStatusUpdateRequest,
+    session: AsyncSession = Depends(get_async_session),
+    _: User = Depends(require_scopes(ADMIN_ORDER_SCOPES)),
+) -> OrderResponse:
+    """Admin: update order status."""
+    return await admin_update_order_status(session, order_id, payload)
+
+@router.patch("/{order_id}/status", response_model=OrderResponse)
+async def update_order_status(
     order_id: int,
     payload: AdminOrderStatusUpdateRequest,
     session: AsyncSession = Depends(get_async_session),
