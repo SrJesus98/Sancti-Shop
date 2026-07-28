@@ -5,7 +5,7 @@ from sqlmodel import SQLModel, Session
 
 from app.core.limiter import reset_rate_limiter
 from app.db.models import Product, User
-from app.db.session import engine
+from app.db.session import sync_engine as engine
 from app.main import app
 
 

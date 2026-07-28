@@ -5,7 +5,7 @@ from sqlmodel import SQLModel, Session
 
 from app.core.limiter import reset_rate_limiter
 from app.db.models import CartItem, Order, OrderItem, Product, User
-from app.db.session import engine
+from app.db.session import sync_engine as engine
 from app.main import app
 
 
@@ -32,6 +32,24 @@ def _register_and_login(client: TestClient, email: str, as_admin: bool = False) 
     login = client.post("/api/auth/login", json={"email": email, "password": password})
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def _pay_order_via_webhook(client: TestClient, headers: dict[str, str], order_id: int) -> None:
+    """Simulate payment via webhook (flujo real)."""
+    intent = client.post(
+        "/api/payments/create-intent",
+        headers=headers,
+        json={"order_id": order_id, "simulate": "approved"},
+    )
+    assert intent.status_code == 201
+    intent_id = intent.json()["id"]
+    webhook = client.post(
+        "/api/payments/webhook",
+        headers={"X-Webhook-Signature": "mock-webhook-secret"},
+        json={"payment_id": intent_id, "order_id": order_id, "status": "approved"},
+    )
+    assert webhook.status_code == 200
+    assert webhook.json()["status"] == "approved"
 
 
 def _seed_product(**kwargs) -> Product:
@@ -63,7 +81,7 @@ def test_checkout_desde_carrito_crea_orden_items_y_limpia_carrito() -> None:
     client.post("/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 2})
     client.post("/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 1})
 
-    response = client.post("/api/orders/checkout", headers=headers)
+    response = client.post("/api/orders", headers=headers)
 
     assert response.status_code == 201
     body = response.json()
@@ -87,7 +105,7 @@ def test_checkout_descuenta_stock_correctamente() -> None:
     p = _seed_product(name="SSD", stock=5, price=50.0)
 
     client.post("/api/cart/items", headers=headers, json={"product_id": p.id, "quantity": 3})
-    response = client.post("/api/orders/checkout", headers=headers)
+    response = client.post("/api/orders", headers=headers)
     assert response.status_code == 201
 
     with Session(engine) as session:
@@ -104,10 +122,10 @@ def test_historial_devuelve_pedidos_del_usuario_autenticado() -> None:
     p = _seed_product(name="Cable", stock=10, price=5.0)
 
     client.post("/api/cart/items", headers=headers_a, json={"product_id": p.id, "quantity": 2})
-    client.post("/api/orders/checkout", headers=headers_a)
+    client.post("/api/orders", headers=headers_a)
 
     client.post("/api/cart/items", headers=headers_b, json={"product_id": p.id, "quantity": 1})
-    client.post("/api/orders/checkout", headers=headers_b)
+    client.post("/api/orders", headers=headers_b)
 
     response = client.get("/api/orders", headers=headers_a)
     assert response.status_code == 200
@@ -121,8 +139,8 @@ def test_endpoints_orders_protegidos_sin_auth_retorna_401() -> None:
     client = TestClient(app)
 
     assert client.get("/api/orders").status_code == 401
-    assert client.post("/api/orders/checkout").status_code == 401
-    assert client.patch("/api/orders/1/pay").status_code == 401
+    assert client.post("/api/orders").status_code == 401
+    assert client.post("/api/payments/create-intent").status_code == 401
 
 
 def test_transiciones_invalidas_retorna_409() -> None:
@@ -133,7 +151,7 @@ def test_transiciones_invalidas_retorna_409() -> None:
     p = _seed_product(name="Webcam", stock=4, price=25.0)
 
     client.post("/api/cart/items", headers=headers, json={"product_id": p.id, "quantity": 1})
-    checkout = client.post("/api/orders/checkout", headers=headers)
+    checkout = client.post("/api/orders", headers=headers)
     order_id = checkout.json()["id"]
 
     invalid_admin = client.patch(f"/api/orders/{order_id}/status", headers=admin_headers, json={"status": "Lista"})
@@ -148,12 +166,15 @@ def test_admin_puede_mover_pagada_a_lista_a_entregada() -> None:
     p = _seed_product(name="Monitor", stock=3, price=200.0)
 
     client.post("/api/cart/items", headers=user_headers, json={"product_id": p.id, "quantity": 1})
-    checkout = client.post("/api/orders/checkout", headers=user_headers)
+    checkout = client.post("/api/orders", headers=user_headers)
     order_id = checkout.json()["id"]
 
-    pay_response = client.patch(f"/api/orders/{order_id}/pay", headers=user_headers)
-    assert pay_response.status_code == 200
-    assert pay_response.json()["status"] == "Pagada"
+    _pay_order_via_webhook(client, user_headers, order_id)
+
+    # Verify order is now Pagada
+    order_detail = client.get(f"/api/orders/{order_id}", headers=user_headers)
+    assert order_detail.status_code == 200
+    assert order_detail.json()["status"] == "Pagada"
 
     ready_response = client.patch(
         f"/api/orders/{order_id}/status",
@@ -179,9 +200,9 @@ def test_usuario_normal_no_puede_endpoint_admin_orders() -> None:
     p = _seed_product(name="Speaker", stock=2, price=40.0)
 
     client.post("/api/cart/items", headers=user_headers, json={"product_id": p.id, "quantity": 1})
-    checkout = client.post("/api/orders/checkout", headers=user_headers)
+    checkout = client.post("/api/orders", headers=user_headers)
     order_id = checkout.json()["id"]
-    client.patch(f"/api/orders/{order_id}/pay", headers=user_headers)
+    _pay_order_via_webhook(client, user_headers, order_id)
 
     response = client.patch(
         f"/api/orders/{order_id}/status",

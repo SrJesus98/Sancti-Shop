@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import SQLModel
 
 from app.core.limiter import reset_rate_limiter
-from app.db.session import engine
+from app.db.session import sync_engine as engine
 from app.main import app
 
 
