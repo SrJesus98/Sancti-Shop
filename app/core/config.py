@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_URL: str = "http://localhost:8000"
 
+    # File upload
+    UPLOAD_DIR: str = "app/static/images/products"
+    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5MB
+    ALLOWED_EXTENSIONS: str = "jpg,jpeg,png,gif,webp"
+
     # Environment
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
 

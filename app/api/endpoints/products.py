@@ -36,7 +36,7 @@ async def get_product(
 async def list_products(
     request: Request,
     page: int = Query(default=1, ge=1),
-    size: int = Query(default=10, ge=1, le=100),
+    size: int = Query(default=10, ge=1, le=1000),
     category: str | None = Query(default=None),
     sort: str | None = Query(default=None),
     order: str = Query(default="asc"),
