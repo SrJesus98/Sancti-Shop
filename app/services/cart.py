@@ -14,13 +14,15 @@ async def _get_product_or_404(session: AsyncSession, product_id: int) -> Product
     result = await session.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if not product:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"
+        )
     return product
 
 
 async def _build_cart_response(session: AsyncSession, user: User) -> CartResponse:
     """Build cart response con selectinload para evitar N+1.
-    
+
     Antes: 1 query cart_items + 1 query producto por cada item = 1+N queries
     Ahora: 1 query cart_items + 1 query productos (via selectinload) = 2 queries
     """
@@ -58,7 +60,9 @@ async def get_cart(session: AsyncSession, user: User) -> CartResponse:
     return await _build_cart_response(session, user)
 
 
-async def add_item_to_cart(session: AsyncSession, user: User, product_id: int, quantity: int) -> CartResponse:
+async def add_item_to_cart(
+    session: AsyncSession, user: User, product_id: int, quantity: int
+) -> CartResponse:
     """Add a product to cart or increment existing item."""
     product = await _get_product_or_404(session, product_id)
     validate_available_for_purchase(product)
@@ -93,7 +97,9 @@ async def update_cart_item_quantity(
     )
     item = result.scalar_one_or_none()
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found"
+        )
 
     if quantity == 0:
         await session.delete(item)
@@ -104,7 +110,10 @@ async def update_cart_item_quantity(
     await session.commit()
     return await _build_cart_response(session, user)
 
-async def remove_cart_item(session: AsyncSession, user:User, cart_item_id:int)->None:
+
+async def remove_cart_item(
+    session: AsyncSession, user: User, cart_item_id: int
+) -> None:
     """Serching for cart item to delete"""
     result = await session.execute(
         select(CartItem).where(
@@ -115,17 +124,17 @@ async def remove_cart_item(session: AsyncSession, user:User, cart_item_id:int)->
     item = result.scalar_one_or_none()
     ###Check that exist##
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found"
+        )
     ###Deliting from database###
     await session.delete(item)
     await session.commit()
-    
+
 
 async def clear_cart(session: AsyncSession, user: User) -> CartResponse:
     """Clear all cart items for user."""
-    result = await session.execute(
-        select(CartItem).where(CartItem.user_id == user.id)
-    )
+    result = await session.execute(select(CartItem).where(CartItem.user_id == user.id))
     items = result.scalars().all()
     for item in items:
         await session.delete(item)

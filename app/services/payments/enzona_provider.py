@@ -7,7 +7,9 @@ from app.services.payments.adapter import CreateIntentResult, PaymentProviderAda
 class EnzonaPaymentProvider(PaymentProviderAdapter):
     """Base/stub implementation without external calls yet."""
 
-    def create_intent(self, payment_id: int, order_id: int, simulate: str | None = None) -> CreateIntentResult:
+    def create_intent(
+        self, payment_id: int, order_id: int, simulate: str | None = None
+    ) -> CreateIntentResult:
         return CreateIntentResult(
             status="pending",
             redirect_url=(

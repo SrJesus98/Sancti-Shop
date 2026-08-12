@@ -1,4 +1,5 @@
 """Main FastAPI application."""
+
 import logging
 from contextlib import asynccontextmanager
 

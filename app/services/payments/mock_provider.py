@@ -7,7 +7,9 @@ from app.services.payments.adapter import CreateIntentResult, PaymentProviderAda
 class MockPaymentProvider(PaymentProviderAdapter):
     """Mock provider for local/sandbox flows."""
 
-    def create_intent(self, payment_id: int, order_id: int, simulate: str | None = None) -> CreateIntentResult:
+    def create_intent(
+        self, payment_id: int, order_id: int, simulate: str | None = None
+    ) -> CreateIntentResult:
         """Mock: devuelve 'pending' para que el frontend simule el webhook localmente."""
         return CreateIntentResult(
             status="pending",

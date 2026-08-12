@@ -16,7 +16,9 @@ def reset_db() -> None:
     reset_rate_limiter()
 
 
-def _register_and_login(client: TestClient, email: str, as_admin: bool = False) -> dict[str, str]:
+def _register_and_login(
+    client: TestClient, email: str, as_admin: bool = False
+) -> dict[str, str]:
     password = "Password123!"
     client.post("/api/auth/register", json={"email": email, "password": password})
 
@@ -34,7 +36,9 @@ def _register_and_login(client: TestClient, email: str, as_admin: bool = False) 
     return {"Authorization": f"Bearer {token}"}
 
 
-def _pay_order_via_webhook(client: TestClient, headers: dict[str, str], order_id: int) -> None:
+def _pay_order_via_webhook(
+    client: TestClient, headers: dict[str, str], order_id: int
+) -> None:
     """Simulate payment via webhook (flujo real)."""
     intent = client.post(
         "/api/payments/create-intent",
@@ -78,8 +82,12 @@ def test_checkout_desde_carrito_crea_orden_items_y_limpia_carrito() -> None:
     p1 = _seed_product(name="Mouse", price=20.0, stock=10)
     p2 = _seed_product(name="Keyboard", price=30.0, stock=10)
 
-    client.post("/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 2})
-    client.post("/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 1})
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 2}
+    )
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 1}
+    )
 
     response = client.post("/api/orders", headers=headers)
 
@@ -104,7 +112,9 @@ def test_checkout_descuenta_stock_correctamente() -> None:
     headers = _register_and_login(client, "stock-checkout@test.com")
     p = _seed_product(name="SSD", stock=5, price=50.0)
 
-    client.post("/api/cart/items", headers=headers, json={"product_id": p.id, "quantity": 3})
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p.id, "quantity": 3}
+    )
     response = client.post("/api/orders", headers=headers)
     assert response.status_code == 201
 
@@ -121,10 +131,14 @@ def test_historial_devuelve_pedidos_del_usuario_autenticado() -> None:
     headers_b = _register_and_login(client, "user-b@test.com")
     p = _seed_product(name="Cable", stock=10, price=5.0)
 
-    client.post("/api/cart/items", headers=headers_a, json={"product_id": p.id, "quantity": 2})
+    client.post(
+        "/api/cart/items", headers=headers_a, json={"product_id": p.id, "quantity": 2}
+    )
     client.post("/api/orders", headers=headers_a)
 
-    client.post("/api/cart/items", headers=headers_b, json={"product_id": p.id, "quantity": 1})
+    client.post(
+        "/api/cart/items", headers=headers_b, json={"product_id": p.id, "quantity": 1}
+    )
     client.post("/api/orders", headers=headers_b)
 
     response = client.get("/api/orders", headers=headers_a)
@@ -147,14 +161,22 @@ def test_transiciones_invalidas_retorna_409() -> None:
     reset_db()
     client = TestClient(app)
     headers = _register_and_login(client, "invalid-transition@test.com")
-    admin_headers = _register_and_login(client, "admin-transition@test.com", as_admin=True)
+    admin_headers = _register_and_login(
+        client, "admin-transition@test.com", as_admin=True
+    )
     p = _seed_product(name="Webcam", stock=4, price=25.0)
 
-    client.post("/api/cart/items", headers=headers, json={"product_id": p.id, "quantity": 1})
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p.id, "quantity": 1}
+    )
     checkout = client.post("/api/orders", headers=headers)
     order_id = checkout.json()["id"]
 
-    invalid_admin = client.patch(f"/api/orders/{order_id}/status", headers=admin_headers, json={"status": "Lista"})
+    invalid_admin = client.patch(
+        f"/api/orders/{order_id}/status",
+        headers=admin_headers,
+        json={"status": "Lista"},
+    )
     assert invalid_admin.status_code == 409
 
 
@@ -165,7 +187,11 @@ def test_admin_puede_mover_pagada_a_lista_a_entregada() -> None:
     admin_headers = _register_and_login(client, "admin-state@test.com", as_admin=True)
     p = _seed_product(name="Monitor", stock=3, price=200.0)
 
-    client.post("/api/cart/items", headers=user_headers, json={"product_id": p.id, "quantity": 1})
+    client.post(
+        "/api/cart/items",
+        headers=user_headers,
+        json={"product_id": p.id, "quantity": 1},
+    )
     checkout = client.post("/api/orders", headers=user_headers)
     order_id = checkout.json()["id"]
 
@@ -199,7 +225,11 @@ def test_usuario_normal_no_puede_endpoint_admin_orders() -> None:
     user_headers = _register_and_login(client, "user-no-admin@test.com")
     p = _seed_product(name="Speaker", stock=2, price=40.0)
 
-    client.post("/api/cart/items", headers=user_headers, json={"product_id": p.id, "quantity": 1})
+    client.post(
+        "/api/cart/items",
+        headers=user_headers,
+        json={"product_id": p.id, "quantity": 1},
+    )
     checkout = client.post("/api/orders", headers=user_headers)
     order_id = checkout.json()["id"]
     _pay_order_via_webhook(client, user_headers, order_id)

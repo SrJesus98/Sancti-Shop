@@ -16,7 +16,9 @@ def reset_db() -> None:
     reset_rate_limiter()
 
 
-def _register_and_login(client: TestClient, email: str, as_admin: bool = False) -> dict[str, str]:
+def _register_and_login(
+    client: TestClient, email: str, as_admin: bool = False
+) -> dict[str, str]:
     password = "Password123!"
     client.post("/api/auth/register", json={"email": email, "password": password})
 

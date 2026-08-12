@@ -30,7 +30,12 @@ def _register_and_login(
             user = session.query(User).filter(User.email == email).first()
             assert user is not None
             user.rol = "admin"
-            user.scopes = scopes or ["user:read", "admin:products", "admin:orders", "admin:users"]
+            user.scopes = scopes or [
+                "user:read",
+                "admin:products",
+                "admin:orders",
+                "admin:users",
+            ]
             session.add(user)
             session.commit()
 
@@ -207,7 +212,7 @@ def test_navbar_muestra_link_dashboard_para_admin() -> None:
     response = client.get("/views/")
 
     assert response.status_code == 200
-    assert '/views/admin/dashboard' in response.text
+    assert "/views/admin/dashboard" in response.text
     assert "📊 Dashboard" in response.text
 
 
@@ -219,4 +224,4 @@ def test_navbar_no_muestra_link_dashboard_para_usuario_normal() -> None:
     response = client.get("/views/")
 
     assert response.status_code == 200
-    assert '/views/admin/dashboard' not in response.text
+    assert "/views/admin/dashboard" not in response.text

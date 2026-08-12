@@ -16,7 +16,9 @@ class PaymentProviderAdapter(ABC):
     """Contract every payment provider must implement."""
 
     @abstractmethod
-    def create_intent(self, payment_id: int, order_id: int, simulate: str | None = None) -> CreateIntentResult:
+    def create_intent(
+        self, payment_id: int, order_id: int, simulate: str | None = None
+    ) -> CreateIntentResult:
         """Create provider-side intent."""
 
     @abstractmethod

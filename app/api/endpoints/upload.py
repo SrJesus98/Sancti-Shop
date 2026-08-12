@@ -1,10 +1,16 @@
 """Image upload endpoint."""
 
-from fastapi import APIRouter, Depends, UploadFile  # APIRouter para crear rutas, Depends para auth
+from fastapi import (
+    APIRouter,
+    Depends,
+    UploadFile,
+)  # APIRouter para crear rutas, Depends para auth
 
-from app.api.dependencies.auth import require_scopes  # Para proteger la ruta (solo admin)
-from app.db.models import User                        # El modelo User (para el tipo del Depends)
-from app.services.upload import save_upload_image     # Nuestro service recién creado
+from app.api.dependencies.auth import (
+    require_scopes,
+)  # Para proteger la ruta (solo admin)
+from app.db.models import User  # El modelo User (para el tipo del Depends)
+from app.services.upload import save_upload_image  # Nuestro service recién creado
 
 # ─── Router ───
 # prefix="/upload" hace que todas las rutas empiecen con /api/upload
@@ -27,6 +33,6 @@ async def upload_image(
     """
     # Delegar toda la lógica al service
     url = await save_upload_image(file)
-    
+
     # Devolver el nombre original + la URL pública
     return {"filename": file.filename, "url": url}

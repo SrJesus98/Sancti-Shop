@@ -24,4 +24,7 @@ def test_cors_origins_puede_sobrescribirse() -> None:
     settings = Settings(CORS_ORIGINS="http://example.com,http://other.com")
 
     assert settings.CORS_ORIGINS == "http://example.com,http://other.com"
-    assert settings.CORS_ORIGINS.split(",") == ["http://example.com", "http://other.com"]
+    assert settings.CORS_ORIGINS.split(",") == [
+        "http://example.com",
+        "http://other.com",
+    ]

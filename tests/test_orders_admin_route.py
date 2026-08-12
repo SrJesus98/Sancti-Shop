@@ -16,7 +16,9 @@ def reset_db() -> None:
     reset_rate_limiter()
 
 
-def _register_and_login(client: TestClient, email: str, as_admin: bool = False) -> dict[str, str]:
+def _register_and_login(
+    client: TestClient, email: str, as_admin: bool = False
+) -> dict[str, str]:
     password = "Password123!"
     client.post("/api/auth/register", json={"email": email, "password": password})
 
@@ -78,7 +80,9 @@ def test_admin_orders_route_no_es_capturada_por_ruta_order_id() -> None:
     """
     reset_db()
     client = TestClient(app)
-    admin_headers = _register_and_login(client, "admin-route-order@test.com", as_admin=True)
+    admin_headers = _register_and_login(
+        client, "admin-route-order@test.com", as_admin=True
+    )
 
     response = client.get("/api/orders/admin", headers=admin_headers)
 
@@ -89,9 +93,13 @@ def test_admin_orders_route_no_es_capturada_por_ruta_order_id() -> None:
 def test_admin_orders_route_devuelve_todas_las_ordenes() -> None:
     reset_db()
     client = TestClient(app)
-    admin_headers = _register_and_login(client, "admin-route-list@test.com", as_admin=True)
+    admin_headers = _register_and_login(
+        client, "admin-route-list@test.com", as_admin=True
+    )
     user_headers = _register_and_login(client, "buyer-route-list@test.com")
-    product = _seed_product(client, admin_headers, name="Router Product", price=15.0, stock=10)
+    product = _seed_product(
+        client, admin_headers, name="Router Product", price=15.0, stock=10
+    )
 
     client.post(
         "/api/cart/items",
@@ -113,7 +121,9 @@ def test_admin_orders_all_suffix_ya_no_existe() -> None:
     """The '/admin/all' path used previously must no longer resolve."""
     reset_db()
     client = TestClient(app)
-    admin_headers = _register_and_login(client, "admin-old-path@test.com", as_admin=True)
+    admin_headers = _register_and_login(
+        client, "admin-old-path@test.com", as_admin=True
+    )
 
     response = client.get("/api/orders/admin/all", headers=admin_headers)
 
@@ -129,9 +139,13 @@ def test_create_order_incluye_product_name_y_user_email() -> None:
     product name and user email without lazy-loading errors."""
     reset_db()
     client = TestClient(app)
-    admin_headers = _register_and_login(client, "admin-create-order@test.com", as_admin=True)
+    admin_headers = _register_and_login(
+        client, "admin-create-order@test.com", as_admin=True
+    )
     user_headers = _register_and_login(client, "buyer-create-order@test.com")
-    product = _seed_product(client, admin_headers, name="Eager Load Product", price=25.0, stock=10)
+    product = _seed_product(
+        client, admin_headers, name="Eager Load Product", price=25.0, stock=10
+    )
 
     client.post(
         "/api/cart/items",
@@ -156,13 +170,23 @@ def test_create_order_incluye_product_name_y_user_email() -> None:
 def test_create_order_multiples_items_incluyen_su_propio_producto() -> None:
     reset_db()
     client = TestClient(app)
-    admin_headers = _register_and_login(client, "admin-multi-order@test.com", as_admin=True)
+    admin_headers = _register_and_login(
+        client, "admin-multi-order@test.com", as_admin=True
+    )
     user_headers = _register_and_login(client, "buyer-multi-order@test.com")
     p1 = _seed_product(client, admin_headers, name="Alpha", price=10.0, stock=5)
     p2 = _seed_product(client, admin_headers, name="Beta", price=20.0, stock=5)
 
-    client.post("/api/cart/items", headers=user_headers, json={"product_id": p1["id"], "quantity": 1})
-    client.post("/api/cart/items", headers=user_headers, json={"product_id": p2["id"], "quantity": 2})
+    client.post(
+        "/api/cart/items",
+        headers=user_headers,
+        json={"product_id": p1["id"], "quantity": 1},
+    )
+    client.post(
+        "/api/cart/items",
+        headers=user_headers,
+        json={"product_id": p2["id"], "quantity": 2},
+    )
 
     response = client.post("/api/orders", headers=user_headers)
 

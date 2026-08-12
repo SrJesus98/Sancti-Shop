@@ -10,7 +10,7 @@ async def list_categories(session: AsyncSession) -> list[str]:
     """Return distinct categories from active products."""
     result = await session.execute(
         select(Product.category)
-        .where(Product.is_active == True)
+        .where(Product.is_active)
         .where(Product.category.isnot(None))
         .distinct()
     )

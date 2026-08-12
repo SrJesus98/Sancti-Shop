@@ -8,6 +8,7 @@ from app.services.categories import list_categories
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
+
 @router.get("")
 async def list_categories_endpoint(
     session: AsyncSession = Depends(get_async_session),

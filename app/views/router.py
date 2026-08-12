@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token
-from app.db.models import CartItem, Order, Product, User
+from app.db.models import CartItem, Product, User
 from app.db.session import get_async_session
 from app.services.dashboard import get_dashboard_metrics
 
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/views", tags=["views"])
 
 
 # ==================== USER DEPENDENCY ====================
+
 
 async def get_optional_user(
     cookie_token: str | None = Cookie(default=None, alias="access_token"),
@@ -38,7 +39,9 @@ async def require_user(
 ) -> User:
     """Require authenticated user, redirect to login if not."""
     if not user:
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/views/login"})
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/views/login"}
+        )
     return user
 
 
@@ -47,13 +50,18 @@ async def require_admin(
 ) -> User:
     """Require admin user."""
     if user.rol != "admin":
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/views/"})
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/views/"}
+        )
     return user
 
 
 # ==================== CONTEXT HELPER ====================
 
-async def _context(user: User | None, session: AsyncSession, extra: dict | None = None) -> dict:
+
+async def _context(
+    user: User | None, session: AsyncSession, extra: dict | None = None
+) -> dict:
     """Build base template context with user info and real cart count."""
     ctx = {
         "user": user,
@@ -61,7 +69,9 @@ async def _context(user: User | None, session: AsyncSession, extra: dict | None 
     }
     if user:
         result = await session.execute(
-            select(func.count()).select_from(CartItem).where(CartItem.user_id == user.id)
+            select(func.count())
+            .select_from(CartItem)
+            .where(CartItem.user_id == user.id)
         )
         ctx["cart_count"] = result.scalar() or 0
     if extra:
@@ -71,6 +81,7 @@ async def _context(user: User | None, session: AsyncSession, extra: dict | None 
 
 # ==================== ROUTES ====================
 
+
 @router.get("/")
 async def home(
     request: Request,
@@ -78,13 +89,11 @@ async def home(
     session: AsyncSession = Depends(get_async_session),
 ):
     """Home page — public product catalog."""
-    result = await session.execute(
-        select(Product).where(Product.is_active == True)
-    )
+    result = await session.execute(select(Product).where(Product.is_active))
     products = result.scalars().all()
 
     cat_result = await session.execute(
-        select(Product.category).where(Product.is_active == True).distinct()
+        select(Product.category).where(Product.is_active).distinct()
     )
     categories = [row[0] for row in cat_result if row[0]]
 
@@ -105,11 +114,15 @@ async def home(
     return templates.TemplateResponse(
         request,
         "pages/index.html",
-        await _context(user, session, {
-            "products": products,
-            "products_json": products_json,
-            "categories": categories,
-        })
+        await _context(
+            user,
+            session,
+            {
+                "products": products,
+                "products_json": products_json,
+                "categories": categories,
+            },
+        ),
     )
 
 
@@ -123,9 +136,7 @@ async def login_page(
     if user:
         return RedirectResponse(url="/views/")
     return templates.TemplateResponse(
-        request,
-        "pages/login.html",
-        await _context(user, session)
+        request, "pages/login.html", await _context(user, session)
     )
 
 
@@ -139,9 +150,7 @@ async def register_page(
     if user:
         return RedirectResponse(url="/views/")
     return templates.TemplateResponse(
-        request,
-        "pages/register.html",
-        await _context(user, session)
+        request, "pages/register.html", await _context(user, session)
     )
 
 
@@ -153,9 +162,7 @@ async def cart_page(
 ):
     """Cart page."""
     return templates.TemplateResponse(
-        request,
-        "pages/cart.html",
-        await _context(user, session)
+        request, "pages/cart.html", await _context(user, session)
     )
 
 
@@ -168,7 +175,7 @@ async def product_detail(
 ):
     """Product detail page."""
     result = await session.execute(
-        select(Product).where(Product.id == product_id, Product.is_active == True)
+        select(Product).where(Product.id == product_id, Product.is_active)
     )
     product = result.scalar_one_or_none()
     if not product:
@@ -177,7 +184,7 @@ async def product_detail(
     return templates.TemplateResponse(
         request,
         "pages/product_detail.html",
-        await _context(user, session, {"product": product})
+        await _context(user, session, {"product": product}),
     )
 
 
@@ -189,9 +196,7 @@ async def checkout_page(
 ):
     """Checkout page (requires login)."""
     return templates.TemplateResponse(
-        request,
-        "pages/checkout.html",
-        await _context(user, session)
+        request, "pages/checkout.html", await _context(user, session)
     )
 
 
@@ -203,9 +208,7 @@ async def profile_page(
 ):
     """User profile page."""
     return templates.TemplateResponse(
-        request,
-        "pages/profile.html",
-        await _context(user, session)
+        request, "pages/profile.html", await _context(user, session)
     )
 
 
@@ -217,13 +220,12 @@ async def orders_page(
 ):
     """User orders history page."""
     return templates.TemplateResponse(
-        request,
-        "pages/orders.html",
-        await _context(user, session)
+        request, "pages/orders.html", await _context(user, session)
     )
 
 
 # ==================== ADMIN ROUTES ====================
+
 
 @router.get("/admin/products")
 async def admin_products(
@@ -237,7 +239,7 @@ async def admin_products(
     return templates.TemplateResponse(
         request,
         "pages/admin/products.html",
-        await _context(user, session, {"products": products})
+        await _context(user, session, {"products": products}),
     )
 
 
@@ -262,7 +264,7 @@ async def admin_product_new(
             "product": None,
             "categories": categories,
             "is_edit": False,
-        }
+        },
     )
 
 
@@ -293,7 +295,7 @@ async def admin_product_edit(
             "product": product,
             "categories": categories,
             "is_edit": True,
-        }
+        },
     )
 
 
@@ -305,9 +307,7 @@ async def admin_orders(
 ):
     """Admin order management page."""
     return templates.TemplateResponse(
-        request,
-        "pages/admin/orders.html",
-        await _context(user, session)
+        request, "pages/admin/orders.html", await _context(user, session)
     )
 
 
@@ -319,10 +319,9 @@ async def admin_users(
 ):
     """Admin user management page."""
     return templates.TemplateResponse(
-        request,
-        "pages/admin/users.html",
-        await _context(user, session)
+        request, "pages/admin/users.html", await _context(user, session)
     )
+
 
 @router.get("/admin/dashboard")
 async def admin_dashboard_page(
@@ -335,5 +334,5 @@ async def admin_dashboard_page(
     return templates.TemplateResponse(
         request,
         "pages/admin/dashboard.html",
-        await _context(user, session, {"metrics": metrics})
+        await _context(user, session, {"metrics": metrics}),
     )

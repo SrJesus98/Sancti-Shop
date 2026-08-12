@@ -1,4 +1,5 @@
 """Database base and session management."""
+
 from collections.abc import AsyncGenerator, Generator
 
 from sqlalchemy import create_engine as sync_create_engine
@@ -11,7 +12,6 @@ from sqlalchemy.ext.asyncio import (
 from sqlmodel import SQLModel
 
 from app.core.config import settings
-
 
 database_url = settings.DATABASE_URL  # ej: sqlite+aiosqlite:///./ecommerce.db
 

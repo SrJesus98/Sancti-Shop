@@ -1,6 +1,6 @@
 """Payment service orchestration — ASYNC."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -34,9 +34,11 @@ async def create_payment_intent(
     result = await session.execute(select(Order).where(Order.id == payload.order_id))
     order = result.scalar_one_or_none()
     if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+        )
 
-    can_access = order.user_id == current_user.id 
+    can_access = order.user_id == current_user.id
     if not can_access:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
@@ -59,7 +61,7 @@ async def create_payment_intent(
     )
     intent.status = provider_result.status
     intent.redirect_url = provider_result.redirect_url
-    intent.updated_at = datetime.utcnow()
+    intent.updated_at = datetime.now(timezone.utc)
     session.add(intent)
     await session.commit()
     await session.refresh(intent)
@@ -74,7 +76,9 @@ async def process_webhook(
     """Handle payment webhook events with signature + idempotency."""
     provider = _get_provider()
     if not provider.is_valid_webhook_signature(signature):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature"
+        )
 
     event_key = f"{payload.payment_id}:{payload.order_id}:{payload.status}"
     result = await session.execute(
@@ -87,7 +91,9 @@ async def process_webhook(
         )
         intent = result.scalar_one_or_none()
         if not intent:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found"
+            )
         return PaymentIntentResponse.model_validate(intent)
 
     result = await session.execute(
@@ -95,19 +101,23 @@ async def process_webhook(
     )
     intent = result.scalar_one_or_none()
     if not intent or intent.order_id != payload.order_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found"
+        )
 
     result = await session.execute(select(Order).where(Order.id == payload.order_id))
     order = result.scalar_one_or_none()
     if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
+        )
 
     intent.status = payload.status
-    intent.updated_at = datetime.utcnow()
+    intent.updated_at = datetime.now(timezone.utc)
 
     if payload.status == "approved" and order.status == "En proceso":
         order.status = "Pagada"
-        order.updated_at = datetime.utcnow()
+        order.updated_at = datetime.now(timezone.utc)
         session.add(order)
 
     event = PaymentWebhookEvent(
@@ -134,9 +144,11 @@ async def get_payment_intent(
     )
     intent = result.scalar_one_or_none()
     if not intent:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found"
+        )
 
-    can_access = intent.user_id == current_user.id 
+    can_access = intent.user_id == current_user.id
     if not can_access:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
