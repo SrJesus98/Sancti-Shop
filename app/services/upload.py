@@ -1,19 +1,23 @@
 """Product image upload service."""
 
-import uuid                    # Para generar nombres únicos de archivo
-from pathlib import Path       # Para manejar rutas de archivos
+import uuid  # Para generar nombres únicos de archivo
+from pathlib import Path  # Para manejar rutas de archivos
 
-from fastapi import HTTPException, UploadFile, status  # Para errores HTTP y recibir archivos
+from fastapi import (
+    HTTPException,
+    UploadFile,
+    status,
+)  # Para errores HTTP y recibir archivos
 
 from app.core.config import settings  # Nuestras settings (UPLOAD_DIR, etc.)
 
 # ─── Tipos MIME permitidos ───
 # MIME = el tipo de archivo que el navegador envía en el header
 ALLOWED_MIME = {
-    "image/jpeg",    # .jpg .jpeg
-    "image/png",     # .png
-    "image/gif",     # .gif
-    "image/webp",    # .webp
+    "image/jpeg",  # .jpg .jpeg
+    "image/png",  # .png
+    "image/gif",  # .gif
+    "image/webp",  # .webp
 }
 
 # ─── Extensiones permitidas (desde config.py) ───
@@ -29,7 +33,7 @@ async def save_upload_image(file: UploadFile) -> str:
     Recibe: un archivo (UploadFile)
     Devuelve: la URL pública del archivo guardado (ej: "/static/images/products/abc123.jpg")
     """
-    
+
     # ─── PASO 1: Validar tipo MIME ───
     # Ej: si subes un .exe, file.content_type = "application/x-msdownload"
     # Eso NO está en ALLOWED_MIME, entonces rechazamos
@@ -71,7 +75,7 @@ async def save_upload_image(file: UploadFile) -> str:
     # .mkdir(parents=True, exist_ok=True) = crea la carpeta si no existe
     upload_dir = Path(settings.UPLOAD_DIR)
     upload_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Ruta completa del archivo: app/static/images/products/a1b2c3d4.jpg
     filepath = upload_dir / filename
 

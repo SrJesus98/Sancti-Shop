@@ -22,7 +22,10 @@ def test_csp_style_src_incluye_google_fonts() -> None:
     response = client.get("/health")
 
     csp = response.headers["content-security-policy"]
-    assert "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;" in csp
+    assert (
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;"
+        in csp
+    )
 
 
 def test_csp_font_src_incluye_google_fonts_static() -> None:
@@ -53,7 +56,10 @@ def test_csp_conserva_directivas_existentes() -> None:
 
     csp = response.headers["content-security-policy"]
     assert "default-src 'self';" in csp
-    assert "script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline';" in csp
+    assert (
+        "script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline';"
+        in csp
+    )
     assert "img-src 'self' data: https://fastapi.tiangolo.com;" in csp
     assert "frame-ancestors 'none'" in csp
 
@@ -68,4 +74,7 @@ def test_otros_headers_de_seguridad_se_mantienen() -> None:
     assert response.headers["x-frame-options"] == "DENY"
     assert response.headers["x-xss-protection"] == "1; mode=block"
     assert response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
-    assert response.headers["permissions-policy"] == "camera=(), microphone=(), geolocation=()"
+    assert (
+        response.headers["permissions-policy"]
+        == "camera=(), microphone=(), geolocation=()"
+    )

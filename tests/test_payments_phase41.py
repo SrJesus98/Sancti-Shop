@@ -15,7 +15,9 @@ def reset_db() -> None:
     reset_rate_limiter()
 
 
-def _register_and_login(client: TestClient, email: str, as_admin: bool = False) -> dict[str, str]:
+def _register_and_login(
+    client: TestClient, email: str, as_admin: bool = False
+) -> dict[str, str]:
     password = "Password123!"
     client.post("/api/auth/register", json={"email": email, "password": password})
 
@@ -35,7 +37,13 @@ def _register_and_login(client: TestClient, email: str, as_admin: bool = False) 
 
 def _seed_product() -> Product:
     with Session(engine) as session:
-        product = Product(name="Phone", description="Smartphone", price=100.0, stock=5, category="tech")
+        product = Product(
+            name="Phone",
+            description="Smartphone",
+            price=100.0,
+            stock=5,
+            category="tech",
+        )
         session.add(product)
         session.commit()
         session.refresh(product)
@@ -44,7 +52,11 @@ def _seed_product() -> Product:
 
 def _create_order(client: TestClient, user_headers: dict[str, str]) -> int:
     p = _seed_product()
-    client.post("/api/cart/items", headers=user_headers, json={"product_id": p.id, "quantity": 1})
+    client.post(
+        "/api/cart/items",
+        headers=user_headers,
+        json={"product_id": p.id, "quantity": 1},
+    )
     checkout = client.post("/api/orders", headers=user_headers)
     assert checkout.status_code == 201
     return checkout.json()["id"]
@@ -76,7 +88,11 @@ def test_create_intent_falla_si_orden_no_pertenece() -> None:
     attacker_headers = _register_and_login(client, "attacker@test.com")
     order_id = _create_order(client, owner_headers)
 
-    response = client.post("/api/payments/create-intent", headers=attacker_headers, json={"order_id": order_id})
+    response = client.post(
+        "/api/payments/create-intent",
+        headers=attacker_headers,
+        json={"order_id": order_id},
+    )
     assert response.status_code == 403
 
 
@@ -85,7 +101,9 @@ def test_webhook_approved_mueve_orden_a_pagada() -> None:
     client = TestClient(app)
     headers = _register_and_login(client, "approved@test.com")
     order_id = _create_order(client, headers)
-    intent = client.post("/api/payments/create-intent", headers=headers, json={"order_id": order_id}).json()
+    intent = client.post(
+        "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
+    ).json()
 
     response = client.post(
         "/api/payments/webhook",
@@ -106,7 +124,9 @@ def test_webhook_rejected_no_marca_pagada() -> None:
     client = TestClient(app)
     headers = _register_and_login(client, "rejected@test.com")
     order_id = _create_order(client, headers)
-    intent = client.post("/api/payments/create-intent", headers=headers, json={"order_id": order_id}).json()
+    intent = client.post(
+        "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
+    ).json()
 
     response = client.post(
         "/api/payments/webhook",
@@ -127,7 +147,9 @@ def test_webhook_duplicado_no_duplica_transicion() -> None:
     client = TestClient(app)
     headers = _register_and_login(client, "dup@test.com")
     order_id = _create_order(client, headers)
-    intent = client.post("/api/payments/create-intent", headers=headers, json={"order_id": order_id}).json()
+    intent = client.post(
+        "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
+    ).json()
     payload = {"payment_id": intent["id"], "order_id": order_id, "status": "approved"}
     signature = {"X-Webhook-Signature": "mock-webhook-secret"}
 
@@ -146,7 +168,9 @@ def test_webhook_firma_invalida_retorna_401() -> None:
     client = TestClient(app)
     headers = _register_and_login(client, "bad-sign@test.com")
     order_id = _create_order(client, headers)
-    intent = client.post("/api/payments/create-intent", headers=headers, json={"order_id": order_id}).json()
+    intent = client.post(
+        "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
+    ).json()
 
     response = client.post(
         "/api/payments/webhook",
@@ -161,7 +185,9 @@ def test_get_payment_status_funciona() -> None:
     client = TestClient(app)
     headers = _register_and_login(client, "status@test.com")
     order_id = _create_order(client, headers)
-    intent = client.post("/api/payments/create-intent", headers=headers, json={"order_id": order_id}).json()
+    intent = client.post(
+        "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
+    ).json()
 
     response = client.get(f"/api/payments/{intent['id']}", headers=headers)
     assert response.status_code == 200

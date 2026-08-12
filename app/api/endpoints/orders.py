@@ -16,7 +16,6 @@ from app.services.orders import (
     build_order_response,
 )
 
-
 router = APIRouter(prefix="/orders", tags=["orders"])
 ADMIN_ORDER_SCOPES = ["admin:orders"]
 

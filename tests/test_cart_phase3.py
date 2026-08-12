@@ -93,8 +93,12 @@ def test_ver_carrito_devuelve_subtotales_correctos() -> None:
     p1 = _seed_product(name="A", price=10.0)
     p2 = _seed_product(name="B", price=7.5)
 
-    client.post("/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 2})
-    client.post("/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 4})
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 2}
+    )
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 4}
+    )
 
     response = client.get("/api/cart", headers=headers)
     assert response.status_code == 200
@@ -135,8 +139,12 @@ def test_vaciar_carrito_elimina_todos_los_items() -> None:
     p1 = _seed_product(name="Cable")
     p2 = _seed_product(name="Adapter")
 
-    client.post("/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 1})
-    client.post("/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 2})
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p1.id, "quantity": 1}
+    )
+    client.post(
+        "/api/cart/items", headers=headers, json={"product_id": p2.id, "quantity": 2}
+    )
 
     clear_response = client.delete("/api/cart", headers=headers)
     assert clear_response.status_code == 200
@@ -176,7 +184,9 @@ def test_endpoints_carrito_sin_auth_retorna_401() -> None:
     assert client.get("/api/cart").status_code == 401
     assert client.delete("/api/cart").status_code == 401
     assert (
-        client.post("/api/cart/items", json={"product_id": product.id, "quantity": 1}).status_code
+        client.post(
+            "/api/cart/items", json={"product_id": product.id, "quantity": 1}
+        ).status_code
         == 401
     )
     assert client.put("/api/cart/items/1", json={"quantity": 2}).status_code == 401

@@ -11,7 +11,6 @@ from app.core.security import decode_token, validate_scopes
 from app.db.models import User
 from app.db.session import get_async_session
 
-
 bearer_scheme = HTTPBearer(auto_error=False)
 
 

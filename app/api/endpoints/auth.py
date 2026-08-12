@@ -8,13 +8,20 @@ from app.api.dependencies.auth import get_current_user, require_scopes
 from app.core.limiter import limiter
 from app.db.models import User
 from app.db.session import get_async_session
-from app.schemas.auth import AuthUserResponse, TokenResponse, UserLoginRequest, UserRegisterRequest
+from app.schemas.auth import (
+    AuthUserResponse,
+    TokenResponse,
+    UserLoginRequest,
+    UserRegisterRequest,
+)
 from app.services.auth import login_user, register_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=AuthUserResponse, status_code=status.HTTP_201_CREATED
+)
 @limiter.limit("3/minute")
 async def register(
     request: Request,
@@ -49,18 +56,24 @@ async def login(
 
 @router.get("/me", response_model=AuthUserResponse)
 async def me(current_user: User = Depends(get_current_user)) -> AuthUserResponse:
-    return AuthUserResponse(id=current_user.id, email=current_user.email, scopes=current_user.scopes)
+    return AuthUserResponse(
+        id=current_user.id, email=current_user.email, scopes=current_user.scopes
+    )
 
 
 @router.get("/admin", response_model=AuthUserResponse)
 async def admin_only(
     current_user: User = Depends(require_scopes(["admin:read"])),
 ) -> AuthUserResponse:
-    return AuthUserResponse(id=current_user.id, email=current_user.email, scopes=current_user.scopes)
+    return AuthUserResponse(
+        id=current_user.id, email=current_user.email, scopes=current_user.scopes
+    )
 
 
 @router.get("/logout", response_class=RedirectResponse)
 async def logout():
     response = RedirectResponse(url="/views/")
-    response.delete_cookie(key="access_token", path="/", secure=False, httponly=True, samesite="strict")
+    response.delete_cookie(
+        key="access_token", path="/", secure=False, httponly=True, samesite="strict"
+    )
     return response

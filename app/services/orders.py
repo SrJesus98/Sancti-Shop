@@ -1,28 +1,36 @@
 """Order service helpers — ASYNC."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.db.models import CartItem, Order, OrderItem, Product, User
-from app.schemas.orders import AdminOrderStatusUpdateRequest, OrderItemResponse, OrderResponse
+from app.db.models import CartItem, Order, OrderItem, User
+from app.schemas.orders import (
+    AdminOrderStatusUpdateRequest,
+    OrderItemResponse,
+    OrderResponse,
+)
 
 
-async def _get_order_or_404(session: AsyncSession, order_id: int, user_id: int | None = None) -> Order:
+async def _get_order_or_404(
+    session: AsyncSession, order_id: int, user_id: int | None = None
+) -> Order:
     stmt = select(Order).where(Order.id == order_id)
     if user_id:
         stmt = stmt.where(Order.user_id == user_id)
     stmt = stmt.options(
-            selectinload(Order.items).selectinload(OrderItem.product),
-            selectinload(Order.user)
-        )
+        selectinload(Order.items).selectinload(OrderItem.product),
+        selectinload(Order.user),
+    )
     result = await session.execute(stmt)
     order = result.scalar_one_or_none()
     if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Orden no encontrada")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Orden no encontrada"
+        )
     return order
 
 
@@ -54,13 +62,16 @@ def build_order_response(order: Order) -> OrderResponse:
 async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
     """Create an order from the user's cart items."""
     result = await session.execute(
-        select(CartItem).where(CartItem.user_id == user.id)
+        select(CartItem)
+        .where(CartItem.user_id == user.id)
         .options(selectinload(CartItem.product))
     )
     cart_items = result.scalars().all()
 
     if not cart_items:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Cart is empty"
+        )
 
     order_items = []
     total = 0.0
@@ -94,9 +105,13 @@ async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
         await session.delete(ci)
 
     await session.commit()
-    stmt = select(Order).where(Order.id == order.id).options(
-    selectinload(Order.items).selectinload(OrderItem.product),
-    selectinload(Order.user)
+    stmt = (
+        select(Order)
+        .where(Order.id == order.id)
+        .options(
+            selectinload(Order.items).selectinload(OrderItem.product),
+            selectinload(Order.user),
+        )
     )
     result = await session.execute(stmt)
     order = result.scalar_one()
@@ -106,10 +121,11 @@ async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
 async def get_user_orders(session: AsyncSession, user_id: int) -> list[OrderResponse]:
     """Get all orders for a user."""
     result = await session.execute(
-        select(Order).where(Order.user_id == user_id)
+        select(Order)
+        .where(Order.user_id == user_id)
         .options(
             selectinload(Order.items).selectinload(OrderItem.product),
-            selectinload(Order.user)
+            selectinload(Order.user),
         )
         .order_by(Order.created_at.desc())
     )
@@ -117,7 +133,9 @@ async def get_user_orders(session: AsyncSession, user_id: int) -> list[OrderResp
     return [build_order_response(o) for o in orders]
 
 
-async def get_order_detail(session: AsyncSession, order_id: int, user_id: int) -> OrderResponse:
+async def get_order_detail(
+    session: AsyncSession, order_id: int, user_id: int
+) -> OrderResponse:
     """Get single order detail for a user."""
     order = await _get_order_or_404(session, order_id, user_id)
     return build_order_response(order)
@@ -129,7 +147,7 @@ async def admin_get_all_orders(session: AsyncSession) -> list[OrderResponse]:
         select(Order)
         .options(
             selectinload(Order.items).selectinload(OrderItem.product),
-            selectinload(Order.user)
+            selectinload(Order.user),
         )
         .order_by(Order.created_at.desc())
     )
@@ -158,8 +176,7 @@ async def admin_update_order_status(
             detail=f"Invalid transition from {order.status} to {payload.status}",
         )
     order.status = payload.status
-    order.updated_at = datetime.utcnow()
+    order.updated_at = datetime.now(timezone.utc)
     session.add(order)
     await session.commit()
     return build_order_response(order)
-

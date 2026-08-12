@@ -13,8 +13,12 @@ from app.schemas.products import (
     ProductUpdateRequest,
     PublicProductListResponse,
 )
-from app.services.products import create_product, delete_product, get_products, update_product
-
+from app.services.products import (
+    create_product,
+    delete_product,
+    get_products,
+    update_product,
+)
 
 router = APIRouter(prefix="/products", tags=["products"])
 ADMIN_PRODUCT_SCOPES = ["admin:products"]
@@ -27,6 +31,7 @@ async def get_product(
 ) -> ProductResponse:
     """Public endpoint to get a single product by ID."""
     from app.services.products import get_product_or_404
+
     product = await get_product_or_404(session, product_id)
     return ProductResponse.model_validate(product)
 
@@ -43,7 +48,9 @@ async def list_products(
     session: AsyncSession = Depends(get_async_session),
 ) -> PublicProductListResponse:
     """Public products listing with pagination, category filter, and sorting."""
-    result = await get_products(session, page=page, size=size, category=category, sort=sort, order=order)
+    result = await get_products(
+        session, page=page, size=size, category=category, sort=sort, order=order
+    )
     return PublicProductListResponse(**result)
 
 

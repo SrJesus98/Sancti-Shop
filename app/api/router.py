@@ -12,7 +12,6 @@ from app.api.endpoints.categories import router as categories_router
 from app.api.endpoints.admin_dashboard import router as metrics_router
 from app.api.endpoints.upload import router as upload_router
 
-
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(products_router)
