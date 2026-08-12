@@ -36,7 +36,12 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 # ─── 2) SYNC ENGINE (para startup, seed, y vistas) ──────
-_sync_url = database_url.replace("sqlite+aiosqlite", "sqlite", 1)
+#_sync_url = database_url.replace("sqlite+aiosqlite", "sqlite", 1)
+_sync_url = (
+    database_url
+    .replace("postgresql+asyncpg", "postgresql+psycopg2", 1)
+    .replace("sqlite+aiosqlite", "sqlite", 1)
+)
 sync_engine = sync_create_engine(
     _sync_url,
     connect_args={"check_same_thread": False} if "sqlite" in _sync_url else {},
