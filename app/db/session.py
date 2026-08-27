@@ -13,7 +13,9 @@ from sqlmodel import SQLModel
 
 from app.core.config import settings
 
-database_url = settings.DATABASE_URL  # ej: sqlite+aiosqlite:///./ecommerce.db
+database_url = settings.DATABASE_URL
+if database_url.startswith(("postgresql://", "postgres://")):
+    database_url = database_url.replace("://", "+asyncpg://", 1)
 
 # ─── 1) ASYNC ENGINE (para API endpoints) ────────────────
 async_engine = create_async_engine(
