@@ -6,6 +6,11 @@ from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
 
+def utc_now_naive() -> datetime:
+    """Return the current UTC time for timestamp-without-time-zone columns."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class User(SQLModel, table=True):
     """User model."""
 
@@ -20,7 +25,7 @@ class User(SQLModel, table=True):
         sa_column=Column(JSON, nullable=False),
     )
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=utc_now_naive)
 
     # Relationships
     cart_items: list["CartItem"] = Relationship(back_populates="user")
@@ -41,7 +46,7 @@ class Product(SQLModel, table=True):
     category: str | None = Field(default=None, index=True)
     image_url: str | None = None
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=utc_now_naive)
 
     # Relationships
     cart_items: list["CartItem"] = Relationship(back_populates="product")
@@ -57,7 +62,7 @@ class CartItem(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id", index=True)
     product_id: int = Field(foreign_key="products.id", index=True)
     quantity: int = Field(default=1, ge=1)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=utc_now_naive)
 
     # Relationships
     user: User = Relationship(back_populates="cart_items")
@@ -73,7 +78,7 @@ class Order(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id", index=True)
     status: str = Field(default="En proceso")  # En proceso, Pagada, Lista, Entregada
     total: float = Field(ge=0)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=utc_now_naive)
     updated_at: datetime | None = Field(default=None)
 
     # Relationships
@@ -110,7 +115,7 @@ class PaymentIntent(SQLModel, table=True):
     status: str = Field(default="pending")
     simulate: str | None = Field(default=None)
     redirect_url: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=utc_now_naive)
     updated_at: datetime | None = Field(default=None)
 
     order: Order = Relationship(back_populates="payment_intents")
@@ -127,4 +132,4 @@ class PaymentWebhookEvent(SQLModel, table=True):
     payment_id: int = Field(index=True)
     order_id: int = Field(index=True)
     status: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=utc_now_naive)

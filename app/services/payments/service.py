@@ -1,13 +1,17 @@
 """Payment service orchestration — ASYNC."""
 
-from datetime import UTC, datetime
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.db.models import Order, PaymentIntent, PaymentWebhookEvent, User
+from app.db.models import (
+    Order,
+    PaymentIntent,
+    PaymentWebhookEvent,
+    User,
+    utc_now_naive,
+)
 from app.schemas.payments import (
     PaymentIntentCreateRequest,
     PaymentIntentResponse,
@@ -61,7 +65,7 @@ async def create_payment_intent(
     )
     intent.status = provider_result.status
     intent.redirect_url = provider_result.redirect_url
-    intent.updated_at = datetime.now(UTC)
+    intent.updated_at = utc_now_naive()
     session.add(intent)
     await session.commit()
     await session.refresh(intent)
@@ -113,11 +117,11 @@ async def process_webhook(
         )
 
     intent.status = payload.status
-    intent.updated_at = datetime.now(UTC)
+    intent.updated_at = utc_now_naive()
 
     if payload.status == "approved" and order.status == "En proceso":
         order.status = "Pagada"
-        order.updated_at = datetime.now(UTC)
+        order.updated_at = utc_now_naive()
         session.add(order)
 
     event = PaymentWebhookEvent(

@@ -1,13 +1,11 @@
 """Order service helpers — ASYNC."""
 
-from datetime import UTC, datetime
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.db.models import CartItem, Order, OrderItem, User
+from app.db.models import CartItem, Order, OrderItem, User, utc_now_naive
 from app.schemas.orders import (
     AdminOrderStatusUpdateRequest,
     OrderItemResponse,
@@ -176,7 +174,7 @@ async def admin_update_order_status(
             detail=f"Invalid transition from {order.status} to {payload.status}",
         )
     order.status = payload.status
-    order.updated_at = datetime.now(UTC)
+    order.updated_at = utc_now_naive()
     session.add(order)
     await session.commit()
     return build_order_response(order)
