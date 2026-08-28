@@ -1,5 +1,6 @@
 """Product image upload service."""
 
+import asyncio
 import uuid  # Para generar nombres únicos de archivo
 from pathlib import Path  # Para manejar rutas de archivos
 
@@ -74,14 +75,13 @@ async def save_upload_image(file: UploadFile) -> str:
     # Path(settings.UPLOAD_DIR) = "app/static/images/products"
     # .mkdir(parents=True, exist_ok=True) = crea la carpeta si no existe
     upload_dir = Path(settings.UPLOAD_DIR)
-    upload_dir.mkdir(parents=True, exist_ok=True)
+    await asyncio.to_thread(upload_dir.mkdir, parents=True, exist_ok=True)
 
     # Ruta completa del archivo: app/static/images/products/a1b2c3d4.jpg
     filepath = upload_dir / filename
 
-    # "wb" = write binary (escribe en modo binario)
-    with open(filepath, "wb") as f:
-        f.write(contents)
+    # Move the blocking filesystem write off the async event loop.
+    await asyncio.to_thread(filepath.write_bytes, contents)
 
     # ─── PASO 6: Devolver URL pública ───
     # El StaticFiles de FastAPI sirve /static/ desde app/static/

@@ -119,7 +119,7 @@ def seed_database() -> None:
         logger.info(
             "  ✅ Created %d products across %d categories",
             len(products),
-            len(set(p.category for p in products)),
+            len({p.category for p in products}),
         )
 
         logger.info("🎉 Database seeded successfully!")

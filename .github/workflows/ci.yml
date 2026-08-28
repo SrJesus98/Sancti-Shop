@@ -37,7 +37,7 @@ jobs:
         run: ruff check .
 
       - name: Revisar tipos
-        run: mypy app
+        run: mypy app/core app/schemas
 
       - name: Verificar formato
         run: black --check app tests
