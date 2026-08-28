@@ -1,7 +1,7 @@
 """Create user@test in the database."""
 from app.core.security import get_password_hash
-from app.db.session import SyncSessionLocal
 from app.db.models import User
+from app.db.session import SyncSessionLocal
 
 db = SyncSessionLocal()
 

@@ -1,7 +1,7 @@
 """Phase 4 orders/checkout tests (TDD)."""
 
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session
+from sqlmodel import Session, SQLModel
 
 from app.core.limiter import reset_rate_limiter
 from app.db.models import CartItem, Order, OrderItem, Product, User

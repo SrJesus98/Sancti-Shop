@@ -2,14 +2,14 @@
 
 from fastapi import APIRouter
 
+from app.api.endpoints.admin_dashboard import router as metrics_router
 from app.api.endpoints.admin_users import router as admin_users_router
 from app.api.endpoints.auth import router as auth_router
 from app.api.endpoints.cart import router as cart_router
+from app.api.endpoints.categories import router as categories_router
 from app.api.endpoints.orders import router as orders_router
 from app.api.endpoints.payments import router as payments_router
 from app.api.endpoints.products import router as products_router
-from app.api.endpoints.categories import router as categories_router
-from app.api.endpoints.admin_dashboard import router as metrics_router
 from app.api.endpoints.upload import router as upload_router
 
 api_router = APIRouter(prefix="/api")

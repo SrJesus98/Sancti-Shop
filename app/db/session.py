@@ -3,12 +3,13 @@
 from collections.abc import AsyncGenerator, Generator
 
 from sqlalchemy import create_engine as sync_create_engine
-from sqlalchemy.orm import Session as SyncSession, sessionmaker
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.orm import Session as SyncSession
+from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
 from app.core.config import settings
@@ -38,12 +39,10 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 # ─── 2) SYNC ENGINE (para startup, seed, y vistas) ──────
-#_sync_url = database_url.replace("sqlite+aiosqlite", "sqlite", 1)
-_sync_url = (
-    database_url
-    .replace("postgresql+asyncpg", "postgresql+psycopg2", 1)
-    .replace("sqlite+aiosqlite", "sqlite", 1)
-)
+# _sync_url = database_url.replace("sqlite+aiosqlite", "sqlite", 1)
+_sync_url = database_url.replace(
+    "postgresql+asyncpg", "postgresql+psycopg2", 1
+).replace("sqlite+aiosqlite", "sqlite", 1)
 sync_engine = sync_create_engine(
     _sync_url,
     connect_args={"check_same_thread": False} if "sqlite" in _sync_url else {},

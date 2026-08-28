@@ -11,8 +11,8 @@ from app.services.cart import (
     add_item_to_cart,
     clear_cart,
     get_cart,
-    update_cart_item_quantity,
     remove_cart_item,
+    update_cart_item_quantity,
 )
 
 router = APIRouter(prefix="/cart", tags=["cart"])

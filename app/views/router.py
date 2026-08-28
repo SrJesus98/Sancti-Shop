@@ -1,8 +1,8 @@
 """View routes that render HTML pages with Jinja2 — ASYNC version."""
 
-from fastapi import APIRouter, Cookie, Depends, Request, HTTPException, status
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 

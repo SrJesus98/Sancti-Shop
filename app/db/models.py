@@ -1,10 +1,9 @@
 """Database models."""
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class User(SQLModel, table=True):
@@ -12,7 +11,7 @@ class User(SQLModel, table=True):
 
     __tablename__ = "users"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
     rol: str = Field(default="user")  # user or admin
@@ -21,7 +20,7 @@ class User(SQLModel, table=True):
         sa_column=Column(JSON, nullable=False),
     )
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Relationships
     cart_items: list["CartItem"] = Relationship(back_populates="user")
@@ -34,15 +33,15 @@ class Product(SQLModel, table=True):
 
     __tablename__ = "products"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    description: Optional[str] = None
+    description: str | None = None
     price: float = Field(ge=0)
     stock: int = Field(default=0, ge=0)
-    category: Optional[str] = Field(default=None, index=True)
-    image_url: Optional[str] = None
+    category: str | None = Field(default=None, index=True)
+    image_url: str | None = None
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Relationships
     cart_items: list["CartItem"] = Relationship(back_populates="product")
@@ -54,11 +53,11 @@ class CartItem(SQLModel, table=True):
 
     __tablename__ = "cart_items"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True)
     product_id: int = Field(foreign_key="products.id", index=True)
     quantity: int = Field(default=1, ge=1)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Relationships
     user: User = Relationship(back_populates="cart_items")
@@ -70,12 +69,12 @@ class Order(SQLModel, table=True):
 
     __tablename__ = "orders"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True)
     status: str = Field(default="En proceso")  # En proceso, Pagada, Lista, Entregada
     total: float = Field(ge=0)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime | None = Field(default=None)
 
     # Relationships
     user: User = Relationship(back_populates="orders")
@@ -88,7 +87,7 @@ class OrderItem(SQLModel, table=True):
 
     __tablename__ = "order_items"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     order_id: int = Field(foreign_key="orders.id", index=True)
     product_id: int = Field(foreign_key="products.id", index=True)
     quantity: int = Field(default=1, ge=1)
@@ -104,15 +103,15 @@ class PaymentIntent(SQLModel, table=True):
 
     __tablename__ = "payment_intents"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     order_id: int = Field(foreign_key="orders.id", index=True)
     user_id: int = Field(foreign_key="users.id", index=True)
     provider: str = Field(default="mock")
     status: str = Field(default="pending")
-    simulate: Optional[str] = Field(default=None)
+    simulate: str | None = Field(default=None)
     redirect_url: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime | None = Field(default=None)
 
     order: Order = Relationship(back_populates="payment_intents")
     user: User = Relationship(back_populates="payment_intents")
@@ -123,9 +122,9 @@ class PaymentWebhookEvent(SQLModel, table=True):
 
     __tablename__ = "payment_webhook_events"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     event_key: str = Field(unique=True, index=True)
     payment_id: int = Field(index=True)
     order_id: int = Field(index=True)
     status: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

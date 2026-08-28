@@ -1,6 +1,6 @@
 """Payment service orchestration — ASYNC."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -61,7 +61,7 @@ async def create_payment_intent(
     )
     intent.status = provider_result.status
     intent.redirect_url = provider_result.redirect_url
-    intent.updated_at = datetime.now(timezone.utc)
+    intent.updated_at = datetime.now(UTC)
     session.add(intent)
     await session.commit()
     await session.refresh(intent)
@@ -113,11 +113,11 @@ async def process_webhook(
         )
 
     intent.status = payload.status
-    intent.updated_at = datetime.now(timezone.utc)
+    intent.updated_at = datetime.now(UTC)
 
     if payload.status == "approved" and order.status == "En proceso":
         order.status = "Pagada"
-        order.updated_at = datetime.now(timezone.utc)
+        order.updated_at = datetime.now(UTC)
         session.add(order)
 
     event = PaymentWebhookEvent(

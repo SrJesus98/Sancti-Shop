@@ -1,6 +1,6 @@
 """Order service helpers — ASYNC."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -79,7 +79,7 @@ async def create_order_from_cart(session: AsyncSession, user: User) -> Order:
         product = ci.product
         if not product or not product.is_active:
             continue
-        quantity = ci.quantity if ci.quantity <= product.stock else product.stock
+        quantity = min(ci.quantity, product.stock)
         product.stock -= quantity
         price = float(product.price)
         subtotal = price * quantity
@@ -176,7 +176,7 @@ async def admin_update_order_status(
             detail=f"Invalid transition from {order.status} to {payload.status}",
         )
     order.status = payload.status
-    order.updated_at = datetime.now(timezone.utc)
+    order.updated_at = datetime.now(UTC)
     session.add(order)
     await session.commit()
     return build_order_response(order)
