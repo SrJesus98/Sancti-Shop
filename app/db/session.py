@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import Session as SyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
 
 from app.core.config import settings
@@ -23,6 +24,7 @@ async_engine = create_async_engine(
     database_url,
     connect_args={"check_same_thread": False} if "sqlite" in database_url else {},
     echo=settings.DEBUG,
+    poolclass=NullPool if settings.TESTING else None,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -47,6 +49,7 @@ sync_engine = sync_create_engine(
     _sync_url,
     connect_args={"check_same_thread": False} if "sqlite" in _sync_url else {},
     echo=settings.DEBUG,
+    poolclass=NullPool if settings.TESTING else None,
 )
 
 SyncSessionLocal = sessionmaker(sync_engine, class_=SyncSession)

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "E-commerce"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True
+    TESTING: bool = False
 
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./ecommerce.db"
