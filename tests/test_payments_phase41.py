@@ -3,6 +3,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel
 
+from app.core.config import settings
 from app.core.limiter import reset_rate_limiter
 from app.db.models import Order, PaymentWebhookEvent, Product, User
 from app.db.session import sync_engine as engine
@@ -107,7 +108,7 @@ def test_webhook_approved_mueve_orden_a_pagada() -> None:
 
     response = client.post(
         "/api/payments/webhook",
-        headers={"X-Webhook-Signature": "mock-webhook-secret"},
+        headers={"X-Webhook-Signature": settings.PAYMENT_WEBHOOK_SECRET},
         json={"payment_id": intent["id"], "order_id": order_id, "status": "approved"},
     )
     assert response.status_code == 200
@@ -130,7 +131,7 @@ def test_webhook_rejected_no_marca_pagada() -> None:
 
     response = client.post(
         "/api/payments/webhook",
-        headers={"X-Webhook-Signature": "mock-webhook-secret"},
+        headers={"X-Webhook-Signature": settings.PAYMENT_WEBHOOK_SECRET},
         json={"payment_id": intent["id"], "order_id": order_id, "status": "rejected"},
     )
     assert response.status_code == 200
@@ -151,7 +152,7 @@ def test_webhook_duplicado_no_duplica_transicion() -> None:
         "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
     ).json()
     payload = {"payment_id": intent["id"], "order_id": order_id, "status": "approved"}
-    signature = {"X-Webhook-Signature": "mock-webhook-secret"}
+    signature = {"X-Webhook-Signature": settings.PAYMENT_WEBHOOK_SECRET}
 
     first = client.post("/api/payments/webhook", headers=signature, json=payload)
     second = client.post("/api/payments/webhook", headers=signature, json=payload)
@@ -174,10 +175,28 @@ def test_webhook_firma_invalida_retorna_401() -> None:
 
     response = client.post(
         "/api/payments/webhook",
-        headers={"X-Webhook-Signature": "invalid"},
+        headers={"X-Webhook-Signature": "invalid-signature-intentionally"},
         json={"payment_id": intent["id"], "order_id": order_id, "status": "approved"},
     )
     assert response.status_code == 401
+
+
+def test_webhook_acepta_firma_configurada() -> None:
+    reset_db()
+    client = TestClient(app)
+    headers = _register_and_login(client, "configured-sign@test.com")
+    order_id = _create_order(client, headers)
+    intent = client.post(
+        "/api/payments/create-intent", headers=headers, json={"order_id": order_id}
+    ).json()
+
+    response = client.post(
+        "/api/payments/webhook",
+        headers={"X-Webhook-Signature": settings.PAYMENT_WEBHOOK_SECRET},
+        json={"payment_id": intent["id"], "order_id": order_id, "status": "approved"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "approved"
 
 
 def test_get_payment_status_funciona() -> None:

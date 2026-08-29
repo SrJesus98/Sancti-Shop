@@ -50,7 +50,12 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
-
+# Node / MCP local tooling
+node_modules/
+package-lock.json
+package.json
+scripts/
+.vscode/
 # Entorno
 .env
 .env.local

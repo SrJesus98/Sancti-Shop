@@ -120,7 +120,7 @@ document.getElementById('pay-btn').addEventListener('click', async function() {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Webhook-Signature': 'mock-webhook-secret'
+                            'X-Webhook-Signature': '8e2a4ff60dbaf0f6b06e2c8992d8d53040efbb505576d03a6b036535b85f315a'
                         },
                         body: JSON.stringify({
                             payment_id: payment.id,
